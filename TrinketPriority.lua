@@ -192,22 +192,41 @@ local function EquipInventorySlot(slot)
   return nil
 end
 
+local function ClearCursorCompat()
+  if ClearCursor then ClearCursor() end
+end
+
+local function CursorHasItemCompat()
+  if CursorHasItem then return CursorHasItem() end
+  return false
+end
+
+local function EquipCursorAtSlot(slot)
+  if C_PaperDollInfo and C_PaperDollInfo.EquipCursorItem then
+    C_PaperDollInfo.EquipCursorItem(slot)
+  elseif EquipCursorItem then
+    EquipCursorItem(slot)
+  elseif PickupInventoryItem then
+    PickupInventoryItem(slot)
+  end
+end
+
 local function EquipItem(id)
   local bag, slot = FindBagItem(id)
   if bag then
-    ClearCursor()
-    PickupContainerItem(bag, slot)
-    if CursorHasItem() then PickupInventoryItem(13) end
-    if CursorHasItem() then ClearCursor() end
+    ClearCursorCompat()
+    PickupContainerItemCompat(bag, slot)
+    if CursorHasItemCompat() then EquipCursorAtSlot(13) end
+    if CursorHasItemCompat() then ClearCursorCompat() end
     return true
   end
 
   local id14 = ItemID(InventoryLink(14))
   if id14 == id then
-    ClearCursor()
-    PickupInventoryItem(14)
-    if CursorHasItem() then PickupInventoryItem(13) end
-    if CursorHasItem() then ClearCursor() end
+    ClearCursorCompat()
+    if PickupInventoryItem then PickupInventoryItem(14) end
+    if CursorHasItemCompat() then EquipCursorAtSlot(13) end
+    if CursorHasItemCompat() then ClearCursorCompat() end
     return true
   end
 
