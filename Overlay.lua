@@ -80,8 +80,15 @@ local function CreateIcon(index)
     cooldownFrame = CreateFrame("Cooldown", nil, icon, template)
     if cooldownFrame.SetAllPoints then cooldownFrame:SetAllPoints(texture) end
     if cooldownFrame.SetFrameLevel then cooldownFrame:SetFrameLevel(icon:GetFrameLevel() + 2) end
+    if cooldownFrame.SetHideCountdownNumbers then cooldownFrame:SetHideCountdownNumbers(true) end
   end
   icon.cooldownFrame = cooldownFrame
+
+  local cooldownText = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  cooldownText:SetPoint("CENTER", icon, "CENTER", 0, 0)
+  cooldownText:SetText("")
+  cooldownText:Hide()
+  icon.cooldownText = cooldownText
 
   local equippedBorder = icon:CreateTexture(nil, "OVERLAY")
   equippedBorder:SetAllPoints()
@@ -118,6 +125,11 @@ local function CreateIcon(index)
 
   icons[index] = icon
   return icon
+end
+
+local function FormatCooldown(remaining)
+  local seconds = math.max(0, math.ceil(remaining or 0))
+  return tostring(seconds)
 end
 
 local function RefreshLayout(count)
@@ -210,10 +222,20 @@ function Overlay.Refresh()
 
       local startTime, duration = GetCooldownInfo(entry, id13, id14)
       local remaining = TP.RemainingCooldown(startTime, duration)
-      if remaining > 0 and icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
-        icon.cooldownFrame:SetCooldown(startTime, duration)
-      elseif icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
-        icon.cooldownFrame:SetCooldown(0, 0)
+      if icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
+        if remaining > 0 then
+          icon.cooldownFrame:SetCooldown(startTime, duration)
+        else
+          icon.cooldownFrame:SetCooldown(0, 0)
+        end
+      end
+
+      if remaining > 0 and icon.cooldownText then
+        icon.cooldownText:SetText(FormatCooldown(remaining))
+        icon.cooldownText:Show()
+      elseif icon.cooldownText then
+        icon.cooldownText:SetText("")
+        icon.cooldownText:Hide()
       end
     else
       icon.entry = nil
