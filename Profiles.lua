@@ -58,12 +58,13 @@ function Profiles.Initialize()
 
   local tabWidth = 110
   for i = 1, #TP.PROFILE_NAMES do
+    local index = i
     local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     button:SetWidth(tabWidth)
     button:SetHeight(24)
     button:SetPoint("TOPLEFT", panel, "TOPLEFT", 25 + (i - 1) * (tabWidth + 6), -42)
     button:SetScript("OnClick", function()
-      TP.SwitchProfile(TP.PROFILE_NAMES[i])
+      TP.SwitchProfile(TP.PROFILE_NAMES[index])
     end)
     tabButtons[i] = button
   end

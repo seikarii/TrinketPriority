@@ -38,4 +38,13 @@ assert(equipCalls == 0)
 assert(messages[#messages] == "Pasivo ya equipado: Pasivo de prueba")
 for i = 1, #messages do assert(not string.find(messages[i], "no hay pasivo disponible", 1, true)) end
 TP.Inventory.EquipItem = equipItem
+local snapshotReads = 0
+local getSnapshot = TP.Inventory.GetSnapshot
+TP.Inventory.GetSnapshot = function() snapshotReads = snapshotReads + 1; return getSnapshot() end
+local rendered
+TP.Overlay = { Render = function(state) rendered = state end }
+TP.Priority.RefreshOverlayState()
+assert(snapshotReads == 1)
+assert(rendered and rendered.entries == TP.GetActiveProfile().use)
+TP.Inventory.GetSnapshot = getSnapshot
 print("Priority selection tests passed.")

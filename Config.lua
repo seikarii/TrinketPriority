@@ -14,7 +14,7 @@ local function ActiveProfile()
 end
 
 local function AddEntry(list, id, name)
-  for i = 1, table.getn(list) do
+  for i = 1, #list do
     if list[i].id == id then return false end
   end
   table.insert(list, { id = id, name = name })
@@ -23,7 +23,7 @@ end
 
 function Config.AddUseFromSlot(slot)
   local profile = ActiveProfile()
-  if table.getn(profile.use) >= TP.USE_MAX then
+  if #profile.use >= TP.USE_MAX then
     TP.Print("La lista de uso ya tiene " .. TP.USE_MAX .. " trinkets.")
     return
   end
@@ -70,8 +70,8 @@ function Config.MoveUse(index, delta)
   if type(index) ~= "number" or index ~= math.floor(index) or type(delta) ~= "number" or delta ~= math.floor(delta) then return false end
   local profile = ActiveProfile()
   local target = index + delta
-  if index < 1 or index > table.getn(profile.use) then return false end
-  if target < 1 or target > table.getn(profile.use) then return false end
+  if index < 1 or index > #profile.use then return false end
+  if target < 1 or target > #profile.use then return false end
 
   profile.use[index], profile.use[target] = profile.use[target], profile.use[index]
   Config.RefreshUI()
@@ -96,7 +96,7 @@ function Config.List()
   local profile = ActiveProfile()
   TP.Print("Perfil activo: " .. TP.GetActiveProfileName())
   TP.Print("Trinkets de uso:")
-  for i = 1, table.getn(profile.use) do
+  for i = 1, #profile.use do
     local entry = profile.use[i]
     TP.Print(i .. ". " .. (entry.name or tostring(entry.id)))
   end

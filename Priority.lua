@@ -15,19 +15,21 @@ local function CancelPendingTimer()
   Priority.frame:SetScript("OnUpdate", nil)
 end
 
-local function FindAvailableUseTrinket()
-  local profile = TP.GetActiveProfile()
-  local snapshot = Inventory.GetSnapshot()
+local function FindAvailableUseTrinket(profile, snapshot, cooldowns)
   local equipped14 = snapshot.equipped[14]
-  for i = 1, table.getn(profile.use) do
+  for i = 1, #profile.use do
     local entry = profile.use[i]
-    if entry and entry.id and not Inventory.IsEquippedInSlot13(entry.id) then
+    if entry and entry.id and snapshot.equipped[13] ~= entry.id then
       if equipped14 == entry.id then
-        if TP.InventoryCooldown(14) <= Priority.TRINKET_COOLDOWN_THRESHOLD then return entry end
+        local info = cooldowns and cooldowns[entry.id]
+        local remaining = info and TP.RemainingCooldown(info.start, info.duration) or TP.InventoryCooldown(14)
+        if remaining <= Priority.TRINKET_COOLDOWN_THRESHOLD then return entry end
       else
-        local bag, bagSlot = Inventory.FindBagItem(entry.id)
+        local item = snapshot.byItemID[entry.id]
+        local bag, bagSlot = item and item.bag, item and item.slot
         if bag then
-          local cooldown = Inventory.BagCooldown(bag, bagSlot)
+          local info = cooldowns and cooldowns[entry.id]
+          local cooldown = info and TP.RemainingCooldown(info.start, info.duration) or Inventory.BagCooldown(bag, bagSlot)
           if cooldown <= Priority.TRINKET_COOLDOWN_THRESHOLD then return entry end
         end
       end
@@ -36,35 +38,49 @@ local function FindAvailableUseTrinket()
   return nil
 end
 
-local function FindPassiveTrinket()
-  local passive = TP.GetActiveProfile().passive
+local function FindPassiveTrinket(profile, snapshot)
+  local passive = profile.passive
   if not passive or not passive.id then return nil end
-  if Inventory.IsEquippedInSlot13(passive.id) then return nil end
-  if Inventory.FindBagItem(passive.id) or TP.ItemID(TP.InventoryLink(14)) == passive.id then
+  if snapshot.equipped[13] == passive.id then return nil end
+  if snapshot.byItemID[passive.id] or snapshot.equipped[14] == passive.id then
     return passive
   end
   return nil
 end
 
-local function CurrentTrinketWasUsed()
-  local id13 = TP.ItemID(TP.InventoryLink(13))
+local function CurrentTrinketWasUsed(profile, snapshot, cooldowns)
+  local id13 = snapshot.equipped[13]
   if not id13 then return false end
 
-  local profile = TP.GetActiveProfile()
   local passive = profile.passive
   if passive and passive.id == id13 then
     return true
   end
 
-  for i = 1, table.getn(profile.use) do
+  for i = 1, #profile.use do
     local entry = profile.use[i]
     if entry and entry.id == id13 then
-      return TP.InventoryCooldown(13) > Priority.TRINKET_COOLDOWN_THRESHOLD
+      local info = cooldowns and cooldowns[id13]
+      local remaining = info and TP.RemainingCooldown(info.start, info.duration) or TP.InventoryCooldown(13)
+      return remaining > Priority.TRINKET_COOLDOWN_THRESHOLD
     end
   end
 
   -- A trinket outside the active lists has no usage condition: proceed to priority.
   return true
+end
+
+local function GetCooldownInfo(entry, snapshot)
+  local startTime, duration = 0, 0
+  if entry.id == snapshot.equipped[13] then
+    startTime, duration = GetInventoryItemCooldown("player", 13)
+  elseif entry.id == snapshot.equipped[14] then
+    startTime, duration = GetInventoryItemCooldown("player", 14)
+  else
+    local item = snapshot.byItemID[entry.id]
+    if item then startTime, duration = Inventory.GetBagCooldownInfo(item.bag, item.slot) end
+  end
+  return { start = startTime or 0, duration = duration or 0 }
 end
 
 function Priority.ProcessRequest()
@@ -111,12 +127,14 @@ function Priority.ProcessRequest()
     return
   end
 
-  if not CurrentTrinketWasUsed() then
+  local profile = TP.GetActiveProfile()
+  local snapshot = Inventory.GetSnapshot()
+  if not CurrentTrinketWasUsed(profile, snapshot) then
     pending = false
     return
   end
 
-  local candidate = FindAvailableUseTrinket()
+  local candidate = FindAvailableUseTrinket(profile, snapshot)
   if candidate then
     if Inventory.EquipItem(candidate.id) then
       TP.Print("Equipado por priority: " .. (candidate.name or tostring(candidate.id)))
@@ -124,13 +142,12 @@ function Priority.ProcessRequest()
       TP.Print("No se encontró el trinket en bolsas/huecos.")
     end
   else
-    local profile = TP.GetActiveProfile()
     local passive = profile.passive
     local id13 = TP.ItemID(TP.InventoryLink(13))
     if passive and passive.id and id13 == passive.id then
       TP.Print("Pasivo ya equipado: " .. (passive.name or tostring(passive.id)))
     else
-      passive = FindPassiveTrinket()
+      passive = FindPassiveTrinket(profile, snapshot)
       if passive then
         if Inventory.EquipItem(passive.id) then
           TP.Print("Equipado pasivo: " .. (passive.name or tostring(passive.id)))
@@ -231,13 +248,25 @@ function Priority.RequestManualEquip(id, name)
 end
 
 function Priority.GetNextUseCandidate()
-  if not CurrentTrinketWasUsed() then return nil end
-  return FindAvailableUseTrinket()
+  local profile = TP.GetActiveProfile()
+  local snapshot = Inventory.GetSnapshot()
+  if not CurrentTrinketWasUsed(profile, snapshot) then return nil end
+  return FindAvailableUseTrinket(profile, snapshot)
 end
 
 function Priority.RefreshOverlayState()
-  Priority.cachedCandidate = Priority.GetNextUseCandidate()
-  if TP.Overlay and TP.Overlay.Refresh then
-    TP.Overlay.Refresh()
+  local profile = TP.GetActiveProfile()
+  local snapshot = Inventory.GetSnapshot()
+  local cooldowns = {}
+  for i = 1, #profile.use do
+    local entry = profile.use[i]
+    if entry and entry.id then cooldowns[entry.id] = GetCooldownInfo(entry, snapshot) end
   end
+  local candidate
+  if CurrentTrinketWasUsed(profile, snapshot, cooldowns) then candidate = FindAvailableUseTrinket(profile, snapshot, cooldowns) end
+  Priority.cachedCandidate = candidate
+  Priority.overlayState = { entries = profile.use, equipped = snapshot.equipped, cooldowns = cooldowns, candidate = candidate }
+  if TP.Overlay and TP.Overlay.Render then TP.Overlay.Render(Priority.overlayState) end
 end
+
+function Priority.GetOverlayState() return Priority.overlayState end

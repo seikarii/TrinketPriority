@@ -27,7 +27,7 @@ local initializedCharacter
 local function CopyEntryList(value)
   local copy = {}
   if type(value) ~= "table" then return copy end
-  for i = 1, table.getn(value) do
+  for i = 1, #value do
     local entry = value[i]
     if type(entry) == "table" and entry.id then
       copy[i] = { id = entry.id, name = entry.name }

@@ -67,6 +67,7 @@ useTitle:SetText("Prioridad de uso (1 = mayor)")
 
 local rows = {}
 for i = 1, TP.USE_MAX do
+  local index = i
   local row = CreateFrame("Frame", nil, panel)
   row:SetWidth(370)
   row:SetHeight(24)
@@ -89,15 +90,15 @@ for i = 1, TP.USE_MAX do
 
   row.up = CreateButton(row, "^", 24, 20)
   row.up:SetPoint("RIGHT", -56, 0)
-  row.up:SetScript("OnClick", function() TP.Config.MoveUse(i, -1) end)
+  row.up:SetScript("OnClick", function() TP.Config.MoveUse(index, -1) end)
 
   row.down = CreateButton(row, "v", 24, 20)
   row.down:SetPoint("LEFT", row.up, "RIGHT", 2, 0)
-  row.down:SetScript("OnClick", function() TP.Config.MoveUse(i, 1) end)
+  row.down:SetScript("OnClick", function() TP.Config.MoveUse(index, 1) end)
 
   row.remove = CreateButton(row, "X", 24, 20)
   row.remove:SetPoint("LEFT", row.down, "RIGHT", 2, 0)
-  row.remove:SetScript("OnClick", function() TP.Config.RemoveUse(i) end)
+  row.remove:SetScript("OnClick", function() TP.Config.RemoveUse(index) end)
 
   rows[i] = row
 end

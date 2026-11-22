@@ -80,15 +80,9 @@ local function CreateIcon(index)
     cooldownFrame = CreateFrame("Cooldown", nil, icon, template)
     if cooldownFrame.SetAllPoints then cooldownFrame:SetAllPoints(texture) end
     if cooldownFrame.SetFrameLevel then cooldownFrame:SetFrameLevel(icon:GetFrameLevel() + 2) end
-    if cooldownFrame.SetHideCountdownNumbers then cooldownFrame:SetHideCountdownNumbers(true) end
+    if cooldownFrame.SetHideCountdownNumbers then cooldownFrame:SetHideCountdownNumbers(false) end
   end
   icon.cooldownFrame = cooldownFrame
-
-  local cooldownText = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  cooldownText:SetPoint("CENTER", icon, "CENTER", 0, 0)
-  cooldownText:SetText("")
-  cooldownText:Hide()
-  icon.cooldownText = cooldownText
 
   local equippedBorder = icon:CreateTexture(nil, "OVERLAY")
   equippedBorder:SetAllPoints()
@@ -132,11 +126,6 @@ local function CreateIcon(index)
   return icon
 end
 
-local function FormatCooldown(remaining)
-  local seconds = math.max(0, math.ceil(remaining or 0))
-  return tostring(seconds)
-end
-
 local function RefreshLayout(count)
   local iconSize = GetIconSize()
   if count < 1 then
@@ -161,43 +150,19 @@ local function RefreshLayout(count)
   end
 end
 
-local function GetCooldownInfo(entry, id13, id14)
-  if not entry or not entry.id then return 0, 0 end
-
-  if entry.id == id13 then
-    local startTime, duration = GetInventoryItemCooldown("player", 13)
-    return startTime or 0, duration or 0
-  end
-
-  if entry.id == id14 then
-    local startTime, duration = GetInventoryItemCooldown("player", 14)
-    return startTime or 0, duration or 0
-  end
-
-  local bag, slot = TP.Inventory.FindBagItem(entry.id)
-  if bag and TP.Inventory.GetBagCooldownInfo then
-    local startTime, duration = TP.Inventory.GetBagCooldownInfo(bag, slot)
-    return startTime or 0, duration or 0
-  end
-
-  return 0, 0
-end
-
-function Overlay.Refresh()
+function Overlay.Render(state)
   if not frame then return end
-
-  local profile = TP.GetActiveProfile()
-  profile.use = type(profile.use) == "table" and profile.use or {}
-  local count = table.getn(profile.use)
+  state = state or {}
+  local entries = state.entries or {}
+  local count = #entries
   RefreshLayout(count)
-
-  local snapshot = TP.Inventory.GetSnapshot()
-  local id13, id14 = snapshot.equipped[13], snapshot.equipped[14]
-  local nextEntry = TP.Priority and TP.Priority.cachedCandidate or nil
+  local equipped = state.equipped or {}
+  local id13, id14 = equipped[13], equipped[14]
+  local nextEntry = state.candidate
 
   for i = 1, TP.USE_MAX do
     local icon = icons[i] or CreateIcon(i)
-    local entry = profile.use[i]
+    local entry = entries[i]
 
     if entry then
       icon.entry = entry
@@ -225,7 +190,8 @@ function Overlay.Refresh()
         icon.arrow:Hide()
       end
 
-      local startTime, duration = GetCooldownInfo(entry, id13, id14)
+      local cooldown = state.cooldowns and state.cooldowns[entry.id]
+      local startTime, duration = cooldown and cooldown.start or 0, cooldown and cooldown.duration or 0
       local remaining = TP.RemainingCooldown(startTime, duration)
       if icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
         if remaining > 0 then
@@ -235,13 +201,6 @@ function Overlay.Refresh()
         end
       end
 
-      if remaining > 0 and icon.cooldownText then
-        icon.cooldownText:SetText(FormatCooldown(remaining))
-        icon.cooldownText:Show()
-      elseif icon.cooldownText then
-        icon.cooldownText:SetText("")
-        icon.cooldownText:Hide()
-      end
     else
       icon.entry = nil
       icon:Hide()
@@ -256,6 +215,9 @@ function Overlay.Refresh()
     statusText:SetText("")
   end
 end
+
+-- Retained as a compatibility alias; callers must provide already computed state.
+function Overlay.Refresh(state) Overlay.Render(state or {}) end
 
 function Overlay.Toggle()
   if not frame then Overlay.Initialize() end
@@ -277,7 +239,7 @@ function Overlay.SetIconSize(size)
   if size < 24 then size = 24 end
   if size > 96 then size = 96 end
   GetProfileSettings().iconSize = size
-  if frame then Overlay.Refresh() end
+  if frame then Overlay.Render(TP.Priority and TP.Priority.GetOverlayState and TP.Priority.GetOverlayState() or {}) end
 end
 
 function Overlay.RestoreProfilePosition()
@@ -315,25 +277,6 @@ function Overlay.Initialize()
 
   RestorePosition()
 
-  frame:RegisterEvent("BAG_UPDATE")
-  frame:RegisterEvent("BAG_UPDATE_DELAYED")
-  frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-  frame:RegisterEvent("UNIT_INVENTORY_CHANGED")
-  frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
-  frame:SetScript("OnEvent", function()
-    Overlay.Refresh()
-  end)
-
-  local updateElapsed = 0
-  frame:SetScript("OnUpdate", function(self, elapsed)
-    if not self:IsShown() then return end
-    updateElapsed = updateElapsed + elapsed
-    if updateElapsed >= 0.5 then
-      updateElapsed = 0
-      Overlay.Refresh()
-    end
-  end)
-
   for i = 1, TP.USE_MAX do
     CreateIcon(i)
   end
@@ -354,19 +297,19 @@ function Overlay.Initialize()
   end)
 
   frame:Show()
-  Overlay.Refresh()
+  Overlay.Render({ entries = TP.GetActiveProfile().use, equipped = {}, cooldowns = {}, candidate = nil })
 end
 
 function Overlay.Show()
   if not frame then Overlay.Initialize() end
-  Overlay.Refresh()
+  Overlay.Render(TP.Priority and TP.Priority.GetOverlayState and TP.Priority.GetOverlayState() or {})
   frame:Show()
 end
 
 function Overlay.Hide()
   -- El overlay permanece visible permanentemente; Hide se conserva por compatibilidad.
   if not frame then Overlay.Initialize() end
-  Overlay.Refresh()
+  Overlay.Render(TP.Priority and TP.Priority.GetOverlayState and TP.Priority.GetOverlayState() or {})
   frame:Show()
 end
 
