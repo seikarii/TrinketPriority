@@ -22,6 +22,12 @@ panel:SetScript("OnDragStart", function() panel:StartMoving() end)
 panel:SetScript("OnDragStop", function() panel:StopMovingOrSizing() end)
 panel:Hide()
 
+panel:SetScript("OnHide", function()
+  if TP.Overlay and TP.Overlay.Lock then
+    TP.Overlay.Lock()
+  end
+end)
+
 UI.panel = panel
 
 local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")

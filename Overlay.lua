@@ -344,3 +344,12 @@ function Overlay.Hide()
   Overlay.Refresh()
   frame:Show()
 end
+
+function Overlay.Lock()
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  TrinketPriorityDB.overlay.movable = false
+  if frame then
+    frame:EnableMouse(false)
+    frame:SetMovable(false)
+  end
+end
