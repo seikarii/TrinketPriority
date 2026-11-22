@@ -3,6 +3,21 @@ TP.UI = {}
 
 local UI = TP.UI
 
+local function GetItemIcon(id)
+  if id then
+    local itemApi = _G and _G.C_Item
+    if itemApi and itemApi.GetItemIconByID then
+      local icon = itemApi.GetItemIconByID(id)
+      if icon then return icon end
+    end
+    if _G and _G.GetItemIcon then
+      local icon = _G.GetItemIcon(id)
+      if icon then return icon end
+    end
+  end
+  return "Interface\\Icons\\INV_Misc_QuestionMark"
+end
+
 local function CreateButton(parent, text, width, height)
   local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
   button:SetWidth(width)
@@ -58,9 +73,15 @@ for i = 1, TP.USE_MAX do
   row:SetPoint("TOPLEFT", 25, -132 - (i - 1) * 27)
 
   row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  row.text:SetPoint("LEFT", 20, 0)
-  row.text:SetWidth(210)
+  row.text:SetPoint("LEFT", 52, 0)
+  row.text:SetWidth(178)
   row.text:SetJustifyH("LEFT")
+
+  row.icon = row:CreateTexture(nil, "ARTWORK")
+  row.icon:SetPoint("LEFT", 24, 0)
+  row.icon:SetWidth(22)
+  row.icon:SetHeight(22)
+  row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
   row.number = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
   row.number:SetPoint("LEFT", 0, 0)
@@ -85,9 +106,15 @@ local passiveTitle = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 passiveTitle:SetPoint("TOPLEFT", 25, -330)
 passiveTitle:SetText("Fallback pasivo")
 
+local passiveIcon = panel:CreateTexture(nil, "ARTWORK")
+passiveIcon:SetPoint("TOPLEFT", 25, -351)
+passiveIcon:SetWidth(22)
+passiveIcon:SetHeight(22)
+passiveIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
 local passiveText = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-passiveText:SetPoint("TOPLEFT", 25, -353)
-passiveText:SetWidth(250)
+passiveText:SetPoint("TOPLEFT", 51, -353)
+passiveText:SetWidth(224)
 passiveText:SetJustifyH("LEFT")
 
 local passive13 = CreateButton(panel, "13", 55, 22)
@@ -157,11 +184,15 @@ function UI.Refresh()
     local entry = profile.use[i]
     if entry then
       rows[i].text:SetText(entry.name or tostring(entry.id))
+      rows[i].icon:SetTexture(GetItemIcon(entry.id))
+      rows[i].icon:Show()
       rows[i].up:Show()
       rows[i].down:Show()
       rows[i].remove:Show()
     else
       rows[i].text:SetText("Vacío")
+      rows[i].icon:SetTexture(nil)
+      rows[i].icon:Hide()
       rows[i].up:Hide()
       rows[i].down:Hide()
       rows[i].remove:Hide()
@@ -170,8 +201,12 @@ function UI.Refresh()
 
   if profile.passive then
     passiveText:SetText(profile.passive.name or tostring(profile.passive.id))
+    passiveIcon:SetTexture(GetItemIcon(profile.passive.id))
+    passiveIcon:Show()
   else
     passiveText:SetText("Ninguno")
+    passiveIcon:SetTexture(nil)
+    passiveIcon:Hide()
   end
 
   local overlaySize = tonumber(profile.overlay.iconSize) or 48
