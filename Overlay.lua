@@ -116,18 +116,6 @@ local function CreateIcon(index)
     SavePosition()
   end)
 
-  icon:SetScript("OnEnter", function(self)
-    if not self.entry then return end
-    GameTooltip:SetOwner(self, "ANCHOR_TOP")
-    if self.entry.id and GameTooltip.SetItemByID then
-      GameTooltip:SetItemByID(self.entry.id)
-    else
-      GameTooltip:SetText(self.entry.name or tostring(self.entry.id))
-    end
-    GameTooltip:Show()
-  end)
-  icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
   icons[index] = icon
   return icon
 end
