@@ -16,6 +16,7 @@ frame:SetScript("OnEvent", function(self, event, arg1)
     if TP.Profiles and TP.Profiles.Refresh then TP.Profiles.Refresh() end
     if TP.Overlay and TP.Overlay.Initialize then TP.Overlay.Initialize() end
     if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
+    if TP.Minimap and TP.Minimap.Initialize then TP.Minimap.Initialize() end
   elseif event == "PLAYER_REGEN_DISABLED" then
     if TP.Priority.HasPendingRequest() then TP.Priority.CancelTimer() end
   elseif event == "PLAYER_REGEN_ENABLED" then

@@ -48,6 +48,16 @@ Puedes usar también:
 - `/trinket list`
 - `/trinket overlay`: bloquea o desbloquea el movimiento del overlay.
 
+## Icono minimapa
+
+El addon añade un icono persistente junto al minimapa:
+
+- **Clic izquierdo:** abre/cierra `/trinket ui`.
+- **Mayús-clic izquierdo:** permite arrastrar el icono alrededor de todo el borde del minimapa.
+- La posición se guarda por personaje y se restaura al iniciar sesión.
+
+También puedes restablecerla con `/trinket minimap reset`.
+
 ## Macro recomendada
 
 ```text

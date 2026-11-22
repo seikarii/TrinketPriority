@@ -115,6 +115,8 @@ function TP.InitDatabase()
   end
   character.profiles = type(character.profiles) == "table" and character.profiles or {}
 
+  if type(character.minimapAngle) ~= "number" then character.minimapAngle = 225 end
+
   for i = 1, #TP.PROFILE_NAMES do
     local profileName = TP.PROFILE_NAMES[i]
     local profile = character.profiles[profileName]

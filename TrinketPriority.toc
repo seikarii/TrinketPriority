@@ -14,5 +14,6 @@ Overlay.lua
 UI.lua
 Profiles.lua
 Commands.lua
+Minimap.lua
 Main.lua
 

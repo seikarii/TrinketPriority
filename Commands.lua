@@ -53,6 +53,13 @@ function Commands.Register()
       if TP.Overlay and TP.Overlay.Toggle then
         TP.Overlay.Toggle()
       end
+    elseif command == "minimap" then
+      if rest == "reset" and TP.Minimap and TP.Minimap.ResetPosition then
+        TP.Minimap.ResetPosition()
+        TP.Print("Posición del icono minimapa restablecida.")
+      else
+        TP.Print("Uso: /trinket minimap reset")
+      end
     elseif command == "help" then
       TP.Print("/trinket - ejecuta priority")
       TP.Print("/trinket profile 1|2|3 - cambia perfil")
@@ -63,6 +70,7 @@ function Commands.Register()
       TP.Print("/trinket up|down N - mueve una prioridad")
       TP.Print("/trinket list - muestra perfil y listas")
       TP.Print("/trinket overlay - bloquea/desbloquea el movimiento del overlay")
+      TP.Print("/trinket minimap reset - restablece la posición del icono")
     else
       TP.UI.Toggle()
     end
