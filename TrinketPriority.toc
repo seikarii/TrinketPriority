@@ -1,7 +1,11 @@
 ## Interface: 16001
 ## Title: Trinket Priority
 ## Notes: Equips a priority trinket out of combat.
-## Author: Forever
+## Author: Seikarii, luna
+## Version: 1.1.0
+## IconTexture: 130000
 ## SavedVariables: TrinketPriorityDB
 
+
 TrinketPriority.lua
+
