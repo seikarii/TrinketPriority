@@ -50,11 +50,17 @@ local function ApplyItemIcon(icon, itemID)
     if itemIcon then itemIconCache[itemID] = itemIcon end
   end
   if itemIcon then
-    icon.texture:SetTexture(itemIcon)
+    if icon.appliedIcon ~= itemIcon then
+      icon.appliedIcon = itemIcon
+      icon.texture:SetTexture(itemIcon)
+    end
     return
   end
 
-  icon.texture:SetTexture(FALLBACK_ICON)
+  if icon.appliedIcon ~= FALLBACK_ICON then
+    icon.appliedIcon = FALLBACK_ICON
+    icon.texture:SetTexture(FALLBACK_ICON)
+  end
   local itemApi = _G and _G.C_Item
   if not itemIconRequested[itemID] and not itemIconFailed[itemID]
     and itemApi and itemApi.RequestLoadItemDataByID then
@@ -245,6 +251,7 @@ function Overlay.Render(state)
 
     else
       icon.entry = nil
+      icon.itemID = nil
       icon:Hide()
     end
   end
@@ -284,7 +291,12 @@ function Overlay.OnItemDataLoadResult(itemID, success)
     itemIconFailed[itemID] = nil
     for i = 1, TP.USE_MAX do
       local icon = icons[i]
-      if icon and icon.itemID == itemID then icon.texture:SetTexture(itemIcon) end
+      if icon and icon.entry and icon.entry.id == itemID and icon:IsShown() then
+        if icon.appliedIcon ~= itemIcon then
+          icon.appliedIcon = itemIcon
+          icon.texture:SetTexture(itemIcon)
+        end
+      end
     end
     return true
   end

@@ -130,6 +130,37 @@ assert(textureWrites == beforeOldResult)
 -- Empty state is explicit and sizing uses its entry count without priority calls.
 local emptyState = { entries = {}, equipped = {}, cooldowns = {}, candidate = nil }
 assert(O.Render(emptyState))
+-- An icon loaded while hidden must reuse the cache when it reappears, without another request or hidden texture write.
+local hiddenState = { entries = { { id = 26, name = "Hidden" } }, equipped = {}, cooldowns = {}, candidate = nil }
+O.Render(hiddenState)
+assert(loadRequests[26] == 1)
+assert(O.Render(emptyState))
+local beforeHiddenArrival = textureWrites
+iconAvailable[26] = true
+assert(O.OnItemDataLoadResult(26, true))
+assert(textureWrites == beforeHiddenArrival)
+assert(O.Render(hiddenState))
+assert(loadRequests[26] == 1)
+local textureAfterReappearance = textureWrites
+assert(O.Render(hiddenState))
+assert(textureWrites == textureAfterReappearance)
+
+-- A late successful result for a substituted item remains in cache only and never writes to the replacement slot.
+local replacedState = { entries = { { id = 27, name = "Replaced request" } }, equipped = {}, cooldowns = {}, candidate = nil }
+O.Render(replacedState)
+assert(loadRequests[27] == 1)
+local replacementState = { entries = { { id = 28, name = "Replacement" } }, equipped = {}, cooldowns = {}, candidate = nil }
+iconAvailable[28] = true
+O.Render(replacementState)
+local beforeLateResult = textureWrites
+iconAvailable[27] = true
+assert(O.OnItemDataLoadResult(27, true))
+assert(textureWrites == beforeLateResult)
+assert(loadRequests[27] == 1)
+assert(O.Render(replacementState))
+assert(textureWrites == beforeLateResult)
+assert(O.Render(emptyState))
+
 local latest
 O.Render = function(s) latest = s; return render(s) end
 O.Refresh()
@@ -142,4 +173,5 @@ assert(O.Render({ entries = { { id = 10 } }, equipped = {}, cooldowns = {}, cand
 O.SetIconSize(68)
 assert(O.Render({ entries = { { id = 10 }, { id = 20 } }, equipped = {}, cooldowns = {}, candidate = nil }))
 O.SetIconSize(72)
+
 print("Overlay lifecycle and incremental render tests passed.")

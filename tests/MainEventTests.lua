@@ -29,10 +29,20 @@ onEvent(frame, "UNIT_INVENTORY_CHANGED", "player")
 assert(invalidations == 0 and refreshes == 0 and #timers == 1)
 timers[1]()
 assert(invalidations == 1 and refreshes == 1)
+
+-- Inventory/equipment activity after the first callback must start a new grouped update.
+for i = 1, 3 do
+  onEvent(frame, "BAG_UPDATE_DELAYED")
+end
+onEvent(frame, "PLAYER_EQUIPMENT_CHANGED", 14)
+assert(#timers == 2)
+timers[2]()
+assert(invalidations == 2 and refreshes == 2)
+
 onEvent(frame, "ITEM_DATA_LOAD_RESULT", 123, true)
-assert(itemResults == 1 and invalidations == 1 and refreshes == 1)
+assert(itemResults == 1 and invalidations == 2 and refreshes == 2)
 onEvent(frame, "SPELL_UPDATE_COOLDOWN")
-assert(invalidations == 1 and refreshes == 2)
+assert(invalidations == 2 and refreshes == 3)
 onEvent(frame, "BAG_UPDATE_COOLDOWN")
-assert(invalidations == 1 and refreshes == 3)
+assert(invalidations == 2 and refreshes == 4)
 print("Settled inventory event tests passed.")
