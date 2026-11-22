@@ -2,6 +2,16 @@
 
 Addon compatible con clientes Vanilla/Forever 1.12.
 
+## Arquitectura
+
+- `Core.lua`: namespace, variables, utilidades de objetos y estado compartido.
+- `Inventory.lua`: acceso a bolsas, cooldowns y equipamiento.
+- `Config.lua`: modelos y operaciones sobre prioridad/pasivo.
+- `Priority.lua`: lógica de selección, timers y solicitudes diferidas.
+- `UI.lua`: construcción y actualización de la interfaz.
+- `Commands.lua`: registro y despacho de comandos slash.
+- `Main.lua`: eventos del addon y arranque.
+
 ## Configuración
 
 Ejecuta `/trinket ui` o `/trinket options` para abrir la lista.
