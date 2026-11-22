@@ -68,6 +68,6 @@ También puedes restablecerla con `/trinket minimap reset`.
 
 ## Tests locales
 
-Los harness Lua están separados del addon y no se cargan desde el `.toc`. Desde la raíz del addon, ejecuta `lua tests/ProfileTests.lua`, `lua tests/MinimapTests.lua`, `lua tests/ConfigTests.lua`, `lua tests/InventoryTests.lua` y `lua tests/PriorityTests.lua`.
+Los harness Lua están separados del addon y no se cargan desde el `.toc`. Desde la raíz del addon, ejecuta `lua tests/ProfileTests.lua`, `lua tests/MinimapTests.lua`, `lua tests/ConfigTests.lua`, `lua tests/InventoryTests.lua`, `lua tests/PriorityTests.lua`, `lua tests/OverlayTests.lua` y `lua tests/MainEventTests.lua`.
 
 El cambio se realiza únicamente fuera de combate. Si el trinket del hueco 13 pertenece a la lista de uso activa, se espera a confirmar que ha entrado en cooldown antes de cambiarlo. Si está fuera de la lista activa, se pasa directamente a la selección de prioridades sin comprobar su estado de uso o cooldown. Si todos los trinkets de uso están en cooldown, equipa el pasivo configurado del perfil activo.

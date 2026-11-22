@@ -9,7 +9,6 @@ frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:RegisterEvent("PLAYER_DEAD")
 frame:RegisterEvent("PLAYER_ALIVE")
 frame:RegisterEvent("PLAYER_UNGHOST")
-frame:RegisterEvent("BAG_UPDATE")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("UNIT_INVENTORY_CHANGED")
@@ -17,7 +16,7 @@ frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 frame:RegisterEvent("BAG_UPDATE_COOLDOWN")
 
 frame:SetScript("OnEvent", function(self, event, arg1)
-  if event == "BAG_UPDATE" or event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" or (event == "UNIT_INVENTORY_CHANGED" and arg1 == "player") then
+  if event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" or (event == "UNIT_INVENTORY_CHANGED" and arg1 == "player") then
     if TP.Inventory then TP.Inventory.InvalidateSnapshot() end
     if TP.Priority then TP.Priority.RefreshOverlayState() end
   elseif event == "SPELL_UPDATE_COOLDOWN" or event == "BAG_UPDATE_COOLDOWN" then

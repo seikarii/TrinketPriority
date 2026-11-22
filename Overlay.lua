@@ -5,6 +5,8 @@ local Overlay = TP.Overlay
 local frame
 local icons = {}
 local statusText
+local lastState
+local layoutCount, layoutIconSize
 
 local ICON_GAP = 8
 
@@ -128,6 +130,8 @@ end
 
 local function RefreshLayout(count)
   local iconSize = GetIconSize()
+  if layoutCount == count and layoutIconSize == iconSize then return end
+  layoutCount, layoutIconSize = count, iconSize
   if count < 1 then
     frame:SetWidth(220)
   else
@@ -153,6 +157,7 @@ end
 function Overlay.Render(state)
   if not frame then return end
   state = state or {}
+  lastState = state
   local entries = state.entries or {}
   local count = #entries
   RefreshLayout(count)
@@ -168,37 +173,42 @@ function Overlay.Render(state)
       icon.entry = entry
       icon:Show()
 
-      local itemIcon = GetItemIcon(entry.id)
-      if itemIcon then
-        icon.texture:SetTexture(itemIcon)
-      else
-        icon.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+      if icon.itemID ~= entry.id then
+        icon.itemID = entry.id
+        local itemIcon = GetItemIcon(entry.id)
+        icon.texture:SetTexture(itemIcon or "Interface\\Icons\\INV_Misc_QuestionMark")
       end
 
       local isEquipped = (entry.id == id13 or entry.id == id14)
-      if isEquipped then
-        icon.equippedBorder:Show()
-        icon.equippedMark:Show()
-      else
-        icon.equippedBorder:Hide()
-        icon.equippedMark:Hide()
+      if icon.isEquipped ~= isEquipped then
+        icon.isEquipped = isEquipped
+        if isEquipped then
+          icon.equippedBorder:Show()
+          icon.equippedMark:Show()
+        else
+          icon.equippedBorder:Hide()
+          icon.equippedMark:Hide()
+        end
       end
 
-      if nextEntry and nextEntry.id == entry.id then
-        icon.arrow:Show()
-      else
-        icon.arrow:Hide()
+      local isCandidate = nextEntry and nextEntry.id == entry.id or false
+      if icon.isCandidate ~= isCandidate then
+        icon.isCandidate = isCandidate
+        if isCandidate then icon.arrow:Show() else icon.arrow:Hide() end
       end
 
       local cooldown = state.cooldowns and state.cooldowns[entry.id]
       local startTime, duration = cooldown and cooldown.start or 0, cooldown and cooldown.duration or 0
       local remaining = TP.RemainingCooldown(startTime, duration)
+      if icon.lastCooldownStart ~= startTime or icon.lastCooldownDuration ~= duration then
+        icon.lastCooldownStart, icon.lastCooldownDuration = startTime, duration
       if icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
         if remaining > 0 then
           icon.cooldownFrame:SetCooldown(startTime, duration)
         else
           icon.cooldownFrame:SetCooldown(0, 0)
         end
+      end
       end
 
     else
@@ -207,17 +217,26 @@ function Overlay.Render(state)
     end
   end
 
-  if count == 0 then
-    statusText:SetText("Sin trinkets de uso")
-  elseif nextEntry then
-    statusText:SetText("Siguiente: " .. (nextEntry.name or tostring(nextEntry.id)))
-  else
-    statusText:SetText("")
+  local text
+  if count == 0 then text = "Sin trinkets de uso"
+  elseif nextEntry then text = "Siguiente: " .. (nextEntry.name or tostring(nextEntry.id))
+  else text = "" end
+  if statusText.lastText ~= text then
+    statusText.lastText = text
+    statusText:SetText(text)
   end
 end
 
--- Retained as a compatibility alias; callers must provide already computed state.
-function Overlay.Refresh(state) Overlay.Render(state or {}) end
+-- Compatibility alias: a no-argument refresh reuses the last valid render state.
+function Overlay.Refresh(state)
+  if state then
+    Overlay.Render(state)
+  elseif lastState then
+    Overlay.Render(lastState)
+  elseif TP.Priority and TP.Priority.GetOverlayState then
+    Overlay.Render(TP.Priority.GetOverlayState())
+  end
+end
 
 function Overlay.Toggle()
   if not frame then Overlay.Initialize() end
@@ -239,7 +258,7 @@ function Overlay.SetIconSize(size)
   if size < 24 then size = 24 end
   if size > 96 then size = 96 end
   GetProfileSettings().iconSize = size
-  if frame then Overlay.Render(TP.Priority and TP.Priority.GetOverlayState and TP.Priority.GetOverlayState() or {}) end
+  if frame then RefreshLayout(layoutCount or 0) end
 end
 
 function Overlay.RestoreProfilePosition()
@@ -249,7 +268,6 @@ end
 
 function Overlay.Initialize()
   if frame then
-    Overlay.Refresh()
     frame:Show()
     return
   end

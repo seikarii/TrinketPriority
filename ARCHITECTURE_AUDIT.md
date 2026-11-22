@@ -59,7 +59,7 @@ Before refactoring, `Overlay.Refresh()` fetched active profile, snapshot, candid
 | `PLAYER_REGEN_DISABLED`, `PLAYER_DEAD` | `Main.lua` | Cancel pending equip timer |
 | `PLAYER_REGEN_ENABLED`, `PLAYER_ALIVE`, `PLAYER_UNGHOST` | `Main.lua` | Schedule pending request if one exists |
 
-There is one addon frame registering these events. The overlay is an event-free renderer. Bag update variants can both arrive and currently cause two refreshes; there is no event coalescing. This is a remaining optimization opportunity if profiling or a test shows it matters.
+There is one addon frame registering these events. The overlay is an event-free renderer. WoW's event documentation describes `BAG_UPDATE` as firing multiple times while a move affects source/destination bags and `BAG_UPDATE_DELAYED` as the settled notification after those updates. The dispatcher uses only `BAG_UPDATE_DELAYED` for full bag snapshot invalidation and refresh, avoiding intermediate scans. `PLAYER_EQUIPMENT_CHANGED` and player `UNIT_INVENTORY_CHANGED` remain separate because they cover equipment paths outside ordinary bag transactions.
 
 ## Target flow after the change
 
