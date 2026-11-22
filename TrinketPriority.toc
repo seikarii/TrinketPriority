@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: Trinket Priority
-## Notes: Equips a priority trinket out of combat.
+## Notes: Equips a priority trinket out of combat. "/trinket" in ur cds macro.
 ## Authors: Seikarii, luna
 ## Version: 1.3.0
 ## IconTexture: 130000
