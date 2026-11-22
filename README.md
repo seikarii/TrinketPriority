@@ -43,3 +43,5 @@ Puedes usar también:
 ```
 
 El cambio se realiza únicamente fuera de combate y después de confirmar que el trinket del hueco 13 se ha puesto en cooldown. Si todos los trinkets de uso están en cooldown, equipa el pasivo configurado.
+
+- Los iconos muestran el reloj visual y el temporizador numérico de cooldown en tiempo real.

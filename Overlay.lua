@@ -54,6 +54,7 @@ local function CreateIcon(index)
   local iconSize = GetIconSize()
   icon:SetWidth(iconSize)
   icon:SetHeight(iconSize)
+  icon:SetFrameLevel(frame:GetFrameLevel() + 3)
 
   local base = icon:CreateTexture(nil, "BACKGROUND")
   base:SetAllPoints()
@@ -65,6 +66,16 @@ local function CreateIcon(index)
   texture:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -3, 3)
   texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
   icon.texture = texture
+
+  local cooldownFrame
+  if CreateFrame then
+    local template = nil
+    if _G and _G["CooldownFrameTemplate"] then template = "CooldownFrameTemplate" end
+    cooldownFrame = CreateFrame("Cooldown", nil, icon, template)
+    if cooldownFrame.SetAllPoints then cooldownFrame:SetAllPoints(texture) end
+    if cooldownFrame.SetFrameLevel then cooldownFrame:SetFrameLevel(icon:GetFrameLevel() + 2) end
+  end
+  icon.cooldownFrame = cooldownFrame
 
   local equippedBorder = icon:CreateTexture(nil, "OVERLAY")
   equippedBorder:SetAllPoints()
@@ -139,6 +150,28 @@ local function RefreshLayout(count)
   end
 end
 
+local function GetCooldownInfo(entry, id13, id14)
+  if not entry or not entry.id then return 0, 0 end
+
+  if entry.id == id13 then
+    local startTime, duration = GetInventoryItemCooldown("player", 13)
+    return startTime or 0, duration or 0
+  end
+
+  if entry.id == id14 then
+    local startTime, duration = GetInventoryItemCooldown("player", 14)
+    return startTime or 0, duration or 0
+  end
+
+  local bag, slot = TP.Inventory.FindBagItem(entry.id)
+  if bag and TP.Inventory.GetBagCooldownInfo then
+    local startTime, duration = TP.Inventory.GetBagCooldownInfo(bag, slot)
+    return startTime or 0, duration or 0
+  end
+
+  return 0, 0
+end
+
 function Overlay.Refresh()
   if not frame then return end
 
@@ -178,6 +211,15 @@ function Overlay.Refresh()
         icon.arrow:Show()
       else
         icon.arrow:Hide()
+      end
+
+      -- Mostrar únicamente el cooldown nativo del icono
+      local startTime, duration = GetCooldownInfo(entry, id13, id14)
+      local remaining = TP.RemainingCooldown(startTime, duration)
+      if remaining > 0 and icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
+        icon.cooldownFrame:SetCooldown(startTime, duration)
+      elseif icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
+        icon.cooldownFrame:SetCooldown(0, 0)
       end
     else
       icon.entry = nil
@@ -273,7 +315,7 @@ function Overlay.Initialize()
 
   local dragArea = CreateFrame("Frame", nil, frame)
   dragArea:SetAllPoints(frame)
-  dragArea:SetFrameLevel(frame:GetFrameLevel())
+  dragArea:SetFrameLevel(frame:GetFrameLevel() + 1)
   dragArea:EnableMouse(true)
   dragArea:RegisterForDrag("LeftButton")
   dragArea:SetScript("OnDragStart", function()

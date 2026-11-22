@@ -107,3 +107,7 @@ function Inventory.EquipItem(id)
 
   return false
 end
+
+function Inventory.GetBagCooldownInfo(bag, slot)
+  return ContainerItemCooldown(bag, slot)
+end
