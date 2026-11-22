@@ -1,6 +1,6 @@
 local ADDON_NAME = "Trinket Priority"
 local USE_MAX = 7
-local COMBAT_DELAY = 0.8
+local COMBAT_DELAY = 0.1
 
 TrinketPriorityDB = TrinketPriorityDB or {}
 if type(TrinketPriorityDB.use) ~= "table" then TrinketPriorityDB.use = {} end
@@ -277,20 +277,39 @@ local function CurrentTrinketWasUsed()
     local entry = TrinketPriorityDB.use[i]
     if entry and entry.id == id13 then
       local cooldown = InventoryCooldown(13)
-      if cooldown > 0 then return true end
+      if cooldown > 30 then return true end
+      return false
     end
   end
   return false
 end
 
+local function IsPlayerInCombat()
+  if UnitAffectingCombat then
+    return UnitAffectingCombat("player")
+  end
+  return false
+end
+
+local function IsPlayerDeadOrGhost()
+  if UnitIsDeadOrGhost then
+    return UnitIsDeadOrGhost("player")
+  end
+  return false
+end
+
+local function CancelPendingTimer()
+  elapsedPending = 0
+  frame:SetScript("OnUpdate", nil)
+end
+
 local function ProcessTrinketRequest()
-  if UnitAffectingCombat and UnitAffectingCombat("player") then
+  if IsPlayerInCombat() then
     pending = true
     return
   end
-  if UnitIsDeadOrGhost and UnitIsDeadOrGhost("player") then
-    Print("No se puede cambiar trinkets mientras estás muerto.")
-    pending = false
+  if IsPlayerDeadOrGhost() then
+    pending = true
     return
   end
 
@@ -322,42 +341,58 @@ local function ProcessTrinketRequest()
   pending = false
 end
 
-local function RequestTrinket()
-  if UnitAffectingCombat and UnitAffectingCombat("player") then
-    pending = true
-    Print("Cambio diferido hasta salir de combate.")
-    return
-  end
-  if UnitIsDeadOrGhost and UnitIsDeadOrGhost("player") then
-    Print("No se puede cambiar trinkets mientras estás muerto.")
+local function SchedulePendingRequest()
+  if not pending then return end
+  if IsPlayerInCombat() or IsPlayerDeadOrGhost() then
+    CancelPendingTimer()
     return
   end
 
   elapsedPending = 0
-  pending = true
   frame:SetScript("OnUpdate", function(self, elapsed)
     elapsedPending = elapsedPending + elapsed
     if elapsedPending >= COMBAT_DELAY then
-      frame:SetScript("OnUpdate", nil)
+      CancelPendingTimer()
       ProcessTrinketRequest()
     end
   end)
 end
 
+local function RequestTrinket()
+  if IsPlayerDeadOrGhost() then
+    pending = true
+    CancelPendingTimer()
+    Print("Solicitud guardada. Se procesará al volver a estar vivo y fuera de combate.")
+    return
+  end
+  if IsPlayerInCombat() then
+    pending = true
+    CancelPendingTimer()
+    Print("Solicitud guardada. Cambio diferido hasta salir de combate.")
+    return
+  end
+
+  pending = true
+  SchedulePendingRequest()
+end
+
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
+frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+frame:RegisterEvent("PLAYER_DEAD")
+frame:RegisterEvent("PLAYER_ALIVE")
+frame:RegisterEvent("PLAYER_UNGHOST")
 frame:SetScript("OnEvent", function(self, event, arg1)
   if event == "ADDON_LOADED" and arg1 == "TrinketPriority" then
     TrinketPriorityDB.use = TrinketPriorityDB.use or {}
-  elseif event == "PLAYER_REGEN_ENABLED" and pending then
-    elapsedPending = 0
-    frame:SetScript("OnUpdate", function(self, elapsed)
-      elapsedPending = elapsedPending + elapsed
-      if elapsedPending >= COMBAT_DELAY then
-        frame:SetScript("OnUpdate", nil)
-        ProcessTrinketRequest()
-      end
-    end)
+  elseif event == "PLAYER_REGEN_DISABLED" then
+    if pending then CancelPendingTimer() end
+  elseif event == "PLAYER_REGEN_ENABLED" then
+    if pending then SchedulePendingRequest() end
+  elseif event == "PLAYER_DEAD" then
+    if pending then CancelPendingTimer() end
+  elseif event == "PLAYER_ALIVE" or event == "PLAYER_UNGHOST" then
+    if pending then SchedulePendingRequest() end
   end
 end)
 
