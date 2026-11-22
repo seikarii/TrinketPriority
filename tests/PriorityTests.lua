@@ -25,4 +25,17 @@ assert(TP.Priority.GetNextUseCandidate().id == 201)
 GetInventoryItemCooldown = function(_, slot) if slot == 13 then return 0, 10 end return 0, 0 end
 TP.Inventory.InvalidateSnapshot()
 assert(TP.Priority.GetNextUseCandidate() == nil)
+equipped[13] = "item:300"
+TP.GetActiveProfile().use = { { id = 999 } }
+TP.GetActiveProfile().passive = { id = 300, name = "Pasivo de prueba" }
+local messages = {}
+TP.Print = function(message) messages[#messages + 1] = message end
+local equipCalls = 0
+local equipItem = TP.Inventory.EquipItem
+TP.Inventory.EquipItem = function() equipCalls = equipCalls + 1; return true end
+TP.Priority.ProcessRequest()
+assert(equipCalls == 0)
+assert(messages[#messages] == "Pasivo ya equipado: Pasivo de prueba")
+for i = 1, #messages do assert(not string.find(messages[i], "no hay pasivo disponible", 1, true)) end
+TP.Inventory.EquipItem = equipItem
 print("Priority selection tests passed.")

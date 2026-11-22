@@ -124,15 +124,22 @@ function Priority.ProcessRequest()
       TP.Print("No se encontró el trinket en bolsas/huecos.")
     end
   else
-    local passive = FindPassiveTrinket()
-    if passive then
-      if Inventory.EquipItem(passive.id) then
-        TP.Print("Equipado pasivo: " .. (passive.name or tostring(passive.id)))
-      else
-        TP.Print("No se encontró el trinket pasivo.")
-      end
+    local profile = TP.GetActiveProfile()
+    local passive = profile.passive
+    local id13 = TP.ItemID(TP.InventoryLink(13))
+    if passive and passive.id and id13 == passive.id then
+      TP.Print("Pasivo ya equipado: " .. (passive.name or tostring(passive.id)))
     else
-      TP.Print("Todos los trinkets disponibles están en cd y no hay pasivo disponible.")
+      passive = FindPassiveTrinket()
+      if passive then
+        if Inventory.EquipItem(passive.id) then
+          TP.Print("Equipado pasivo: " .. (passive.name or tostring(passive.id)))
+        else
+          TP.Print("No se encontró el trinket pasivo.")
+        end
+      else
+        TP.Print("Todos los trinkets disponibles están en cd y no hay pasivo disponible.")
+      end
     end
   end
 
