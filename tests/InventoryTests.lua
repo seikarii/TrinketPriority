@@ -2,9 +2,14 @@
 local equipped = { [13] = "item:100", [14] = "item:101" }
 local bags = { [0] = { "item:200", nil, "item:201" } }
 local slotReads, bagReads = 0, 0
+local cursorHasItem = false
 GetInventoryItemLink = function(_, slot) slotReads = slotReads + 1; return equipped[slot] end
 GetContainerNumSlots = function(bag) return bag == 0 and 3 or 0 end
 GetContainerItemLink = function(bag, slot) bagReads = bagReads + 1; return bags[bag] and bags[bag][slot] end
+CursorHasItem = function() return cursorHasItem end
+PickupContainerItem = function() cursorHasItem = true end
+EquipCursorItem = function() cursorHasItem = false end
+ClearCursor = function() cursorHasItem = false end
 UnitName = function() return "Test" end
 GetRealmName = function() return "Realm" end
 DEFAULT_CHAT_FRAME = { AddMessage = function() end }
@@ -22,4 +27,7 @@ I.InvalidateSnapshot()
 local second = I.GetSnapshot()
 assert(second ~= first and bagReads > reads)
 assert(slotReads == 4)
+assert(I.EquipItem(200) == true) -- Slot link remains stale until its equipment event.
+cursorHasItem = true
+assert(I.EquipItem(200) == false and cursorHasItem == true) -- Preserve the player's cursor item.
 print("Inventory snapshot tests passed.")

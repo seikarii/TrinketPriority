@@ -103,24 +103,30 @@ function Inventory.EquipItem(id)
   Inventory.InvalidateSnapshot()
   local bag, slot = Inventory.FindBagItem(id)
   if bag then
-    if not CursorHasItemCompat() then
-      ClearCursorCompat()
-      PickupContainerItemCompat(bag, slot)
-      if CursorHasItemCompat() then EquipCursorAtSlot(13) end
-      if CursorHasItemCompat() then ClearCursorCompat() end
-    end
+    -- Do not disturb an item the player already has on the cursor.
+    if CursorHasItemCompat() then return false end
+    PickupContainerItemCompat(bag, slot)
+    local pickedUp = CursorHasItemCompat()
+    if pickedUp then EquipCursorAtSlot(13) end
+    local cursorEmpty = not CursorHasItemCompat()
+    if not cursorEmpty then ClearCursorCompat() end
     Inventory.InvalidateSnapshot()
-    return not CursorHasItemCompat() and TP.ItemID(TP.InventoryLink(13)) == id
+    -- The equipment link can remain stale until PLAYER_EQUIPMENT_CHANGED.
+    -- A completed cursor transaction is the reliable synchronous result here.
+    return pickedUp and cursorEmpty
   end
 
   local id14 = TP.ItemID(TP.InventoryLink(14))
   if id14 == id then
+    if CursorHasItemCompat() then return false end
     ClearCursorCompat()
     if PickupInventoryItem then PickupInventoryItem(14) end
-    if CursorHasItemCompat() then EquipCursorAtSlot(13) end
-    if CursorHasItemCompat() then ClearCursorCompat() end
+    local pickedUp = CursorHasItemCompat()
+    if pickedUp then EquipCursorAtSlot(13) end
+    local cursorEmpty = not CursorHasItemCompat()
+    if not cursorEmpty then ClearCursorCompat() end
     Inventory.InvalidateSnapshot()
-    return not CursorHasItemCompat() and TP.ItemID(TP.InventoryLink(13)) == id
+    return pickedUp and cursorEmpty
   end
 
   Inventory.InvalidateSnapshot()
