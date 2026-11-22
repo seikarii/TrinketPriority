@@ -44,6 +44,11 @@ local function CurrentTrinketWasUsed()
   local id13 = TP.ItemID(TP.InventoryLink(13))
   if not id13 then return false end
 
+  local passive = TrinketPriorityDB.passive
+  if passive and passive.id == id13 then
+    return true
+  end
+
   for i = 1, table.getn(TrinketPriorityDB.use) do
     local entry = TrinketPriorityDB.use[i]
     if entry and entry.id == id13 then
