@@ -4,6 +4,8 @@ Addon compatible con clientes Vanilla/Forever 1.12.
 
 ## Arquitectura
 
+Los módulos activos se cargan exclusivamente desde `TrinketPriority.toc`, en el orden indicado por el manifiesto. No hay archivos de arranque legacy ni módulos adicionales que deban cargarse manualmente.
+
 - `Core.lua`: namespace, variables, utilidades de objetos y estado compartido.
 - `Inventory.lua`: acceso a bolsas, cooldowns y equipamiento.
 - `Config.lua`: modelos y operaciones sobre prioridad/pasivo.
