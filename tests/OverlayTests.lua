@@ -1,11 +1,12 @@
 -- Overlay lifecycle, purity and incremental render tests with minimal frame stubs.
 local createdFrames, textureWrites, pointWrites, cooldownWrites, iconLookups = 0, 0, 0, 0, 0
+local candidateBadge
 local iconAvailable, loadRequests = { [10] = true }, {}
 local profile = { use = { { id = 10, name = "A" } }, overlay = {} }
 local overlayFrame
 local function Object(kind)
   local o = { kind = kind, shown = false, scripts = {} }
-  function o:SetWidth(value) self.width = value end
+  function o:SetWidth(value) self.width = value; if value == 58 and not candidateBadge then candidateBadge = self end end
   function o:SetHeight(value) self.height = value end
   function o:SetFrameLevel() return 1 end
   function o:GetFrameLevel() return 1 end
@@ -166,7 +167,7 @@ O.Render = function(s) latest = s; return render(s) end
 O.Refresh()
 assert(latest == emptyState)
 O.SetIconSize(60)
-assert(overlayFrame.height == 94)
+assert(overlayFrame.height == 104)
 O.SetIconSize(64)
 O.SetIconSize(64)
 assert(O.Render({ entries = { { id = 10 } }, equipped = {}, cooldowns = {}, candidate = nil }))
@@ -175,3 +176,17 @@ assert(O.Render({ entries = { { id = 10 }, { id = 20 } }, equipped = {}, cooldow
 O.SetIconSize(72)
 
 print("Overlay lifecycle and incremental render tests passed.")
+
+-- Assert the NEXT badge is shown only while the matching trinket is the candidate.
+O.Render(state)
+assert(candidateBadge and candidateBadge:IsShown())
+local noCandidateState = {
+  entries = state.entries,
+  equipped = state.equipped,
+  candidate = nil,
+  cooldowns = state.cooldowns,
+}
+O.Render(noCandidateState)
+assert(candidateBadge and not candidateBadge:IsShown())
+O.Render(state)
+assert(candidateBadge and candidateBadge:IsShown())

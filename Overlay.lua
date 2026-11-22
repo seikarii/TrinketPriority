@@ -132,12 +132,78 @@ local function CreateIcon(index)
   equippedMark:Hide()
   icon.equippedMark = equippedMark
 
-  local arrow = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  arrow:SetPoint("BOTTOM", icon, "TOP", 0, 5)
-  arrow:SetText("▼")
-  arrow:SetTextColor(1, 0.95, 0.25, 1)
-  arrow:Hide()
-  icon.arrow = arrow
+  local candidateGlow = icon:CreateTexture(nil, "ARTWORK")
+  candidateGlow:SetPoint("TOPLEFT", icon, "TOPLEFT", -5, 5)
+  candidateGlow:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 5, -5)
+  candidateGlow:SetTexture("Interface\\Buttons\\WHITE8X8")
+  candidateGlow:SetVertexColor(1, 0.82, 0.10, 0.28)
+  candidateGlow:Hide()
+  icon.candidateGlow = candidateGlow
+
+  local candidateBorder = CreateFrame("Frame", nil, icon)
+  candidateBorder:SetAllPoints()
+  candidateBorder:SetFrameLevel(icon:GetFrameLevel() + 4)
+
+  local borderTop = candidateBorder:CreateTexture(nil, "OVERLAY")
+  borderTop:SetPoint("TOPLEFT", candidateBorder, "TOPLEFT", 0, 0)
+  borderTop:SetPoint("TOPRIGHT", candidateBorder, "TOPRIGHT", 0, 0)
+  borderTop:SetHeight(3)
+  borderTop:SetTexture("Interface\\Buttons\\WHITE8X8")
+  borderTop:SetVertexColor(1, 0.82, 0.10, 1)
+
+  local borderBottom = candidateBorder:CreateTexture(nil, "OVERLAY")
+  borderBottom:SetPoint("BOTTOMLEFT", candidateBorder, "BOTTOMLEFT", 0, 0)
+  borderBottom:SetPoint("BOTTOMRIGHT", candidateBorder, "BOTTOMRIGHT", 0, 0)
+  borderBottom:SetHeight(3)
+  borderBottom:SetTexture("Interface\\Buttons\\WHITE8X8")
+  borderBottom:SetVertexColor(1, 0.82, 0.10, 1)
+
+  local borderLeft = candidateBorder:CreateTexture(nil, "OVERLAY")
+  borderLeft:SetPoint("TOPLEFT", candidateBorder, "TOPLEFT", 0, 0)
+  borderLeft:SetPoint("BOTTOMLEFT", candidateBorder, "BOTTOMLEFT", 0, 0)
+  borderLeft:SetWidth(3)
+  borderLeft:SetTexture("Interface\\Buttons\\WHITE8X8")
+  borderLeft:SetVertexColor(1, 0.82, 0.10, 1)
+
+  local borderRight = candidateBorder:CreateTexture(nil, "OVERLAY")
+  borderRight:SetPoint("TOPRIGHT", candidateBorder, "TOPRIGHT", 0, 0)
+  borderRight:SetPoint("BOTTOMRIGHT", candidateBorder, "BOTTOMRIGHT", 0, 0)
+  borderRight:SetWidth(3)
+  borderRight:SetTexture("Interface\\Buttons\\WHITE8X8")
+  borderRight:SetVertexColor(1, 0.82, 0.10, 1)
+
+  candidateBorder:Hide()
+  icon.candidateBorder = candidateBorder
+
+  local candidateBadge = CreateFrame("Frame", nil, icon)
+  candidateBadge:SetWidth(58)
+  candidateBadge:SetHeight(18)
+  candidateBadge:SetPoint("BOTTOM", icon, "TOP", 0, 4)
+  candidateBadge:SetFrameLevel(icon:GetFrameLevel() + 5)
+
+  local badgeBase = candidateBadge:CreateTexture(nil, "BACKGROUND")
+  badgeBase:SetAllPoints()
+  badgeBase:SetTexture("Interface\\Buttons\\WHITE8X8")
+  badgeBase:SetVertexColor(0.12, 0.10, 0.03, 1)
+
+  local badgeBorder = candidateBadge:CreateTexture(nil, "BORDER")
+  badgeBorder:SetAllPoints()
+  badgeBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+  badgeBorder:SetVertexColor(1, 0.82, 0.10, 1)
+
+  local badgeInset = candidateBadge:CreateTexture(nil, "ARTWORK")
+  badgeInset:SetPoint("TOPLEFT", candidateBadge, "TOPLEFT", 2, -2)
+  badgeInset:SetPoint("BOTTOMRIGHT", candidateBadge, "BOTTOMRIGHT", -2, 2)
+  badgeInset:SetTexture("Interface\\Buttons\\WHITE8X8")
+  badgeInset:SetVertexColor(0.08, 0.07, 0.02, 1)
+
+  local badgeText = candidateBadge:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  badgeText:SetPoint("CENTER", candidateBadge, "CENTER", 0, 0)
+  badgeText:SetText("▲  NEXT")
+  badgeText:SetTextColor(1, 0.95, 0.25, 1)
+
+  candidateBadge:Hide()
+  icon.candidateBadge = candidateBadge
 
   icon:EnableMouse(true)
   icon:RegisterForDrag("LeftButton")
@@ -169,7 +235,7 @@ local function RefreshLayout(count)
   else
     frame:SetWidth(count * iconSize + (count - 1) * ICON_GAP + 20)
   end
-  frame:SetHeight(iconSize + 34)
+  frame:SetHeight(iconSize + 44)
 
   for i = 1, TP.USE_MAX do
     local icon = icons[i]
@@ -232,7 +298,8 @@ function Overlay.Render(state)
       local isCandidate = nextEntry and nextEntry.id == entry.id or false
       if icon.isCandidate ~= isCandidate then
         icon.isCandidate = isCandidate
-        if isCandidate then icon.arrow:Show() else icon.arrow:Hide() end
+        if isCandidate then icon.candidateGlow:Show() icon.candidateBorder:Show() icon.candidateBadge:Show()
+        else icon.candidateGlow:Hide() icon.candidateBorder:Hide() icon.candidateBadge:Hide() end
       end
 
       local cooldown = state.cooldowns and state.cooldowns[entry.id]
@@ -345,7 +412,7 @@ function Overlay.Initialize()
   GetIconSize()
 
   frame = CreateFrame("Frame", "TrinketPriorityOverlay", UIParent)
-  frame:SetHeight(GetIconSize() + 34)
+  frame:SetHeight(GetIconSize() + 44)
   frame:SetMovable(settings.movable == true)
   frame:EnableMouse(settings.movable == true)
   frame:RegisterForDrag("LeftButton")
