@@ -5,6 +5,9 @@ local Priority = TP.Priority
 local Inventory = TP.Inventory
 local pending = false
 local elapsedPending = 0
+local manualPending = false
+local manualPendingId = nil
+local manualPendingName = nil
 
 local function CancelPendingTimer()
   elapsedPending = 0
@@ -64,11 +67,45 @@ end
 
 function Priority.ProcessRequest()
   if TP.IsPlayerInCombat() then
-    pending = true
+    if manualPending then
+      pending = false
+    else
+      pending = true
+    end
     return
   end
   if TP.IsPlayerDeadOrGhost() then
-    pending = true
+    if manualPending then
+      pending = false
+    else
+      pending = true
+    end
+    return
+  end
+
+  if manualPending then
+    local id = manualPendingId
+    local name = manualPendingName
+    manualPending = false
+    manualPendingId = nil
+    manualPendingName = nil
+    pending = false
+
+    if not id then
+      Priority.RefreshOverlayState()
+      return
+    end
+
+    local id13 = TP.ItemID(TP.InventoryLink(13))
+    if id13 == id then
+      TP.Print("Ya equipado: " .. (name or tostring(id)))
+    elseif Inventory.EquipItem(id) then
+      TP.Print("Equipado manualmente: " .. (name or tostring(id)))
+    else
+      TP.Print("No se encontró el trinket seleccionado en bolsas/huecos.")
+    end
+
+    Priority.RefreshOverlayState()
     return
   end
 
@@ -109,8 +146,12 @@ function Priority.HasPendingRequest()
   return pending
 end
 
+function Priority.HasPendingManualRequest()
+  return manualPending
+end
+
 function Priority.ScheduleRequest()
-  if not pending then return end
+  if not pending and not manualPending then return end
   if TP.IsPlayerInCombat() or TP.IsPlayerDeadOrGhost() then
     CancelPendingTimer()
     return
@@ -144,6 +185,42 @@ function Priority.Request()
   Priority.ScheduleRequest()
 end
 
+function Priority.RequestManualEquip(id, name)
+  id = tonumber(id)
+  if not id then return false end
+
+  pending = false
+  CancelPendingTimer()
+
+  if TP.IsPlayerInCombat() or TP.IsPlayerDeadOrGhost() then
+    manualPending = true
+    manualPendingId = id
+    manualPendingName = name
+    if TP.IsPlayerDeadOrGhost() then
+      TP.Print("Solicitud manual guardada. Se equipará al volver a estar vivo y fuera de combate.")
+    else
+      TP.Print("Solicitud manual guardada. Se equipará al salir de combate.")
+    end
+    return true
+  end
+
+  manualPending = false
+  manualPendingId = nil
+  manualPendingName = nil
+
+  local id13 = TP.ItemID(TP.InventoryLink(13))
+  if id13 == id then
+    TP.Print("Ya equipado: " .. (name or tostring(id)))
+  elseif Inventory.EquipItem(id) then
+    TP.Print("Equipado manualmente: " .. (name or tostring(id)))
+  else
+    TP.Print("No se encontró el trinket seleccionado en bolsas/huecos.")
+  end
+
+  Priority.RefreshOverlayState()
+  return true
+end
+
 function Priority.GetNextUseCandidate()
   if not CurrentTrinketWasUsed() then return nil end
   return FindAvailableUseTrinket()
@@ -153,4 +230,67 @@ function Priority.RefreshOverlayState()
   if TP.Overlay and TP.Overlay.Refresh then
     TP.Overlay.Refresh()
   end
+end
+
+function Priority.ManualRequest(trinketId, trinketName)
+  if TP.IsPlayerDeadOrGhost() then
+    TP.Print("No se puede equipar el trinket mientras estás muerto o en estado de fantasma.")
+    return
+  end
+
+  if TP.IsPlayerInCombat() then
+    manualPending = true
+    manualPendingId = trinketId
+    manualPendingName = trinketName
+    TP.Print("Solicitud manual guardada para equipar " .. trinketName .. ". Se procesará al salir de combate.")
+    return
+  end
+
+  local itemLink = TP.InventoryLinkByID(trinketId)
+  if itemLink then
+    EquipItemByLink(itemLink)
+    TP.Print("Equipado manualmente: " .. trinketName)
+  else
+    TP.Print("Trinket no encontrado en el inventario.")
+  end
+end
+
+function Priority.ProcessManualRequest()
+  if not manualPendingId then return end
+
+  local itemLink = TP.InventoryLinkByID(manualPendingId)
+  if itemLink then
+    EquipItemByLink(itemLink)
+    TP.Print("Equipado manualmente: " .. (manualPendingName or tostring(manualPendingId)))
+  else
+    TP.Print("Trinket no encontrado en el inventario.")
+  end
+
+  manualPending = false
+  manualPendingId = nil
+  manualPendingName = nil
+end
+
+EquipItemByLink = function(itemLink)
+  local id = TP.ItemID(itemLink)
+  if not id then return false end
+  return Inventory.EquipItem(id)
+end
+
+TP.InventoryLinkByID = TP.InventoryLinkByID or function(id)
+  id = tonumber(id)
+  if not id then return nil end
+  for _, slot in ipairs({ 13, 14 }) do
+    local inventoryLink = TP.InventoryLink(slot)
+    if TP.ItemID(inventoryLink) == id then return inventoryLink end
+  end
+  local bag, bagSlot = Inventory.FindBagItem(id)
+  if bag then
+    if C_Container and C_Container.GetContainerItemLink then
+      return C_Container.GetContainerItemLink(bag, bagSlot)
+    elseif GetContainerItemLink then
+      return GetContainerItemLink(bag, bagSlot)
+    end
+  end
+  return nil
 end

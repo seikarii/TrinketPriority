@@ -122,6 +122,11 @@ local function CreateIcon(index)
     frame:StopMovingOrSizing()
     SavePosition()
   end)
+  icon:SetScript("OnMouseUp", function(self, mouseButton)
+    if mouseButton == "LeftButton" and self.entry and self.entry.id then
+      TP.Priority.RequestManualEquip(self.entry.id, self.entry.name)
+    end
+  end)
 
   icons[index] = icon
   return icon
