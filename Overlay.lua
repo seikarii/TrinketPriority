@@ -88,6 +88,17 @@ local function CreateIcon(index)
   icon.arrow = arrow
 
   icon:EnableMouse(true)
+  icon:RegisterForDrag("LeftButton")
+  icon:SetScript("OnDragStart", function()
+    if TrinketPriorityDB.overlay and TrinketPriorityDB.overlay.movable then
+      frame:StartMoving()
+    end
+  end)
+  icon:SetScript("OnDragStop", function()
+    frame:StopMovingOrSizing()
+    SavePosition()
+  end)
+
   icon:SetScript("OnEnter", function(self)
     if not self.entry then return end
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
@@ -259,6 +270,21 @@ function Overlay.Initialize()
   for i = 1, TP.USE_MAX do
     CreateIcon(i)
   end
+
+  local dragArea = CreateFrame("Frame", nil, frame)
+  dragArea:SetAllPoints(frame)
+  dragArea:SetFrameLevel(frame:GetFrameLevel())
+  dragArea:EnableMouse(true)
+  dragArea:RegisterForDrag("LeftButton")
+  dragArea:SetScript("OnDragStart", function()
+    if TrinketPriorityDB.overlay and TrinketPriorityDB.overlay.movable then
+      frame:StartMoving()
+    end
+  end)
+  dragArea:SetScript("OnDragStop", function()
+    frame:StopMovingOrSizing()
+    SavePosition()
+  end)
 
   frame:Show()
   Overlay.Refresh()

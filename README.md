@@ -32,8 +32,7 @@ Puedes usar también:
 - `/trinket removepassive`
 - `/trinket clear`
 - `/trinket list`
-- `/trinket overlay`: bloquea o desbloquea el movimiento del overlay. El overlay permanece visible; arrástralo con el botón izquierdo cuando esté desbloqueado.
-  - El menú también permite mover/bloquear el overlay y cambiar el tamaño de sus iconos.
+- `/trinket overlay`: bloquea o desbloquea el movimiento del overlay. Permanece visible y puede arrastrarse desde sus iconos o su superficie. El menú ofrece el mismo control y ajuste de tamaño.
 
 ## Macro recomendada
 
