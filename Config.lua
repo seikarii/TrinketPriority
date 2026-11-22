@@ -5,6 +5,7 @@ local Config = TP.Config
 
 function Config.RefreshUI()
   if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
+  if TP.Overlay and TP.Overlay.Refresh then TP.Overlay.Refresh() end
 end
 
 local function AddEntry(list, id, name)

@@ -42,6 +42,10 @@ function Commands.Register()
       TP.Config.List()
     elseif command == "options" or command == "ui" then
       TP.UI.Toggle()
+    elseif command == "overlay" then
+      if TP.Overlay and TP.Overlay.Toggle then
+        TP.Overlay.Toggle()
+      end
     elseif command == "help" then
       TP.Print("/trinket - ejecuta priority")
       TP.Print("/trinket adduse 13|14 - añade equipado")
@@ -50,6 +54,7 @@ function Commands.Register()
       TP.Print("/trinket removepassive - elimina pasivo")
       TP.Print("/trinket up|down N - mueve una prioridad")
       TP.Print("/trinket list - muestra listas")
+      TP.Print("/trinket overlay - bloquea/desbloquea el movimiento del overlay")
     else
       TP.UI.Toggle()
     end

@@ -13,6 +13,7 @@ Los módulos activos se cargan exclusivamente desde `TrinketPriority.toc`, en el
 - `UI.lua`: construcción y actualización de la interfaz.
 - `Commands.lua`: registro y despacho de comandos slash.
 - `Main.lua`: eventos del addon y arranque.
+- `Overlay.lua`: overlay móvil de iconos, trinket equipado y siguiente candidato.
 
 ## Configuración
 
@@ -31,6 +32,8 @@ Puedes usar también:
 - `/trinket removepassive`
 - `/trinket clear`
 - `/trinket list`
+- `/trinket overlay`: bloquea o desbloquea el movimiento del overlay. El overlay permanece visible; arrástralo con el botón izquierdo cuando esté desbloqueado.
+  - El menú también permite mover/bloquear el overlay y cambiar el tamaño de sus iconos.
 
 ## Macro recomendada
 

@@ -1,0 +1,278 @@
+local TP = TrinketPriority
+TP.Overlay = {}
+
+local Overlay = TP.Overlay
+local frame
+local icons = {}
+local statusText
+
+local ICON_GAP = 8
+
+local function GetIconSize()
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  local size = tonumber(TrinketPriorityDB.overlay.iconSize)
+  if not size then size = 48 end
+  if size < 24 then size = 24 end
+  if size > 96 then size = 96 end
+  TrinketPriorityDB.overlay.iconSize = size
+  return size
+end
+
+local function GetItemIcon(id)
+  if C_Item and C_Item.GetItemIconByID then
+    local icon = C_Item.GetItemIconByID(id)
+    if icon then return icon end
+  end
+  if GetItemIcon then
+    return GetItemIcon(id)
+  end
+  return nil
+end
+
+local function SavePosition()
+  if not frame then return end
+  local point, _, relativePoint, x, y = frame:GetPoint()
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  TrinketPriorityDB.overlay.point = point or "CENTER"
+  TrinketPriorityDB.overlay.relativePoint = relativePoint or "CENTER"
+  TrinketPriorityDB.overlay.x = x or 0
+  TrinketPriorityDB.overlay.y = y or 0
+end
+
+local function RestorePosition()
+  local pos = TrinketPriorityDB.overlay
+  if type(pos) ~= "table" or not pos.point then
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    return
+  end
+  frame:ClearAllPoints()
+  frame:SetPoint(pos.point, UIParent, pos.relativePoint or pos.point, pos.x or 0, pos.y or 0)
+end
+
+local function CreateIcon(index)
+  local icon = CreateFrame("Frame", nil, frame)
+  local iconSize = GetIconSize()
+  icon:SetWidth(iconSize)
+  icon:SetHeight(iconSize)
+
+  local base = icon:CreateTexture(nil, "BACKGROUND")
+  base:SetAllPoints()
+  base:SetTexture("Interface\\Buttons\\WHITE8X8")
+  base:SetVertexColor(0.05, 0.05, 0.05, 1)
+
+  local texture = icon:CreateTexture(nil, "ARTWORK")
+  texture:SetPoint("TOPLEFT", icon, "TOPLEFT", 3, -3)
+  texture:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", -3, 3)
+  texture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  icon.texture = texture
+
+  local equippedBorder = icon:CreateTexture(nil, "OVERLAY")
+  equippedBorder:SetAllPoints()
+  equippedBorder:SetTexture("Interface\\Buttons\\WHITE8X8")
+  equippedBorder:SetVertexColor(1, 0.82, 0.10, 0.45)
+  equippedBorder:Hide()
+  icon.equippedBorder = equippedBorder
+
+  local equippedMark = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  equippedMark:SetPoint("BOTTOM", icon, "BOTTOM", 0, 4)
+  equippedMark:SetText("E")
+  equippedMark:SetTextColor(1, 0.82, 0.10, 1)
+  equippedMark:Hide()
+  icon.equippedMark = equippedMark
+
+  local arrow = icon:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+  arrow:SetPoint("BOTTOM", icon, "TOP", 0, 5)
+  arrow:SetText("▼")
+  arrow:SetTextColor(1, 0.95, 0.25, 1)
+  arrow:Hide()
+  icon.arrow = arrow
+
+  icon:EnableMouse(true)
+  icon:SetScript("OnEnter", function(self)
+    if not self.entry then return end
+    GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    if self.entry.id and GameTooltip.SetItemByID then
+      GameTooltip:SetItemByID(self.entry.id)
+    else
+      GameTooltip:SetText(self.entry.name or tostring(self.entry.id))
+    end
+    GameTooltip:Show()
+  end)
+  icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+  icons[index] = icon
+  return icon
+end
+
+local function RefreshLayout(count)
+  local iconSize = GetIconSize()
+  if count < 1 then
+    frame:SetWidth(220)
+  else
+    frame:SetWidth(count * iconSize + (count - 1) * ICON_GAP + 20)
+  end
+  frame:SetHeight(iconSize + 34)
+
+  for i = 1, TP.USE_MAX do
+    local icon = icons[i]
+    if icon then
+      icon:SetWidth(iconSize)
+      icon:SetHeight(iconSize)
+      if i <= count then
+        icon:ClearAllPoints()
+        icon:SetPoint("LEFT", frame, "LEFT", 10 + (i - 1) * (iconSize + ICON_GAP), 0)
+      else
+        icon:Hide()
+      end
+    end
+  end
+end
+
+function Overlay.Refresh()
+  if not frame then return end
+
+  TrinketPriorityDB.use = TrinketPriorityDB.use or {}
+  local count = table.getn(TrinketPriorityDB.use)
+  RefreshLayout(count)
+
+  local id13 = TP.ItemID(TP.InventoryLink(13))
+  local id14 = TP.ItemID(TP.InventoryLink(14))
+  local nextEntry = TP.Priority and TP.Priority.GetNextUseCandidate and TP.Priority.GetNextUseCandidate() or nil
+
+  for i = 1, TP.USE_MAX do
+    local icon = icons[i] or CreateIcon(i)
+    local entry = TrinketPriorityDB.use[i]
+
+    if entry then
+      icon.entry = entry
+      icon:Show()
+
+      local itemIcon = GetItemIcon(entry.id)
+      if itemIcon then
+        icon.texture:SetTexture(itemIcon)
+      else
+        icon.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
+      end
+
+      local isEquipped = (entry.id == id13 or entry.id == id14)
+      if isEquipped then
+        icon.equippedBorder:Show()
+        icon.equippedMark:Show()
+      else
+        icon.equippedBorder:Hide()
+        icon.equippedMark:Hide()
+      end
+
+      if nextEntry and nextEntry.id == entry.id then
+        icon.arrow:Show()
+      else
+        icon.arrow:Hide()
+      end
+    else
+      icon.entry = nil
+      icon:Hide()
+    end
+  end
+
+  if count == 0 then
+    statusText:SetText("Sin trinkets de uso")
+  elseif nextEntry then
+    statusText:SetText("Siguiente: " .. (nextEntry.name or tostring(nextEntry.id)))
+  else
+    statusText:SetText("")
+  end
+end
+
+function Overlay.Toggle()
+  if not frame then Overlay.Initialize() end
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  TrinketPriorityDB.overlay.movable = not (TrinketPriorityDB.overlay.movable == true)
+  frame:EnableMouse(TrinketPriorityDB.overlay.movable)
+  frame:SetMovable(TrinketPriorityDB.overlay.movable)
+
+  if TrinketPriorityDB.overlay.movable then
+    TP.Print("Overlay desbloqueado: arrastra con el botón izquierdo.")
+  else
+    TP.Print("Overlay bloqueado en su posición.")
+  end
+end
+
+function Overlay.SetIconSize(size)
+  size = tonumber(size)
+  if not size then return end
+  if size < 24 then size = 24 end
+  if size > 96 then size = 96 end
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  TrinketPriorityDB.overlay.iconSize = size
+  if frame then Overlay.Refresh() end
+end
+
+function Overlay.Initialize()
+  if frame then
+    Overlay.Refresh()
+    frame:Show()
+    return
+  end
+
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  GetIconSize()
+
+  frame = CreateFrame("Frame", "TrinketPriorityOverlay", UIParent)
+  frame:SetHeight(GetIconSize() + 34)
+  frame:SetMovable(TrinketPriorityDB.overlay.movable == true)
+  frame:EnableMouse(TrinketPriorityDB.overlay.movable == true)
+  frame:RegisterForDrag("LeftButton")
+  frame:SetFrameStrata("MEDIUM")
+  frame:SetScript("OnDragStart", function(self)
+    if not TrinketPriorityDB.overlay.movable then return end
+    self:StartMoving()
+  end)
+  frame:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    SavePosition()
+  end)
+
+  statusText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  statusText:SetPoint("BOTTOM", frame, "BOTTOM", 0, 8)
+
+  RestorePosition()
+
+  frame:RegisterEvent("BAG_UPDATE")
+  frame:RegisterEvent("BAG_UPDATE_DELAYED")
+  frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+  frame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+  frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
+  frame:SetScript("OnEvent", function()
+    Overlay.Refresh()
+  end)
+
+  local updateElapsed = 0
+  frame:SetScript("OnUpdate", function(self, elapsed)
+    if not self:IsShown() then return end
+    updateElapsed = updateElapsed + elapsed
+    if updateElapsed >= 0.5 then
+      updateElapsed = 0
+      Overlay.Refresh()
+    end
+  end)
+
+  for i = 1, TP.USE_MAX do
+    CreateIcon(i)
+  end
+
+  frame:Show()
+  Overlay.Refresh()
+end
+
+function Overlay.Show()
+  if not frame then Overlay.Initialize() end
+  Overlay.Refresh()
+  frame:Show()
+end
+
+function Overlay.Hide()
+  -- El overlay permanece visible permanentemente; Hide se conserva por compatibilidad.
+  if not frame then Overlay.Initialize() end
+  Overlay.Refresh()
+  frame:Show()
+end

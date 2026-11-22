@@ -10,6 +10,7 @@ Core.lua
 Inventory.lua
 Config.lua
 Priority.lua
+Overlay.lua
 UI.lua
 Commands.lua
 Main.lua

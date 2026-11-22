@@ -13,7 +13,7 @@ end
 
 local panel = CreateFrame("Frame", "TrinketPriorityOptions", UIParent)
 panel:SetWidth(420)
-panel:SetHeight(430)
+panel:SetHeight(460)
 panel:SetPoint("CENTER")
 panel:SetMovable(true)
 panel:EnableMouse(true)
@@ -100,6 +100,47 @@ local clear = CreateButton(panel, "Limpiar todo", 115, 22)
 clear:SetPoint("LEFT", removePassive, "RIGHT", 8, 0)
 clear:SetScript("OnClick", function() TP.Config.Clear() end)
 
+local overlaySizeTitle = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+overlaySizeTitle:SetPoint("TOPLEFT", 25, -390)
+overlaySizeTitle:SetText("Tamaño del overlay")
+
+local overlaySizeText = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+overlaySizeText:SetPoint("LEFT", overlaySizeTitle, "RIGHT", 12, 0)
+
+local overlaySizeMinus = CreateButton(panel, "-", 28, 22)
+overlaySizeMinus:SetPoint("TOPRIGHT", -62, -384)
+
+local overlaySizePlus = CreateButton(panel, "+", 28, 22)
+overlaySizePlus:SetPoint("LEFT", overlaySizeMinus, "RIGHT", 4, 0)
+
+local function ChangeOverlaySize(delta)
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  local size = tonumber(TrinketPriorityDB.overlay.iconSize) or 48
+  size = size + delta
+  if size < 24 then size = 24 end
+  if size > 96 then size = 96 end
+  if TP.Overlay and TP.Overlay.SetIconSize then
+    TP.Overlay.SetIconSize(size)
+  end
+  UI.Refresh()
+end
+
+overlaySizeMinus:SetScript("OnClick", function() ChangeOverlaySize(-4) end)
+overlaySizePlus:SetScript("OnClick", function() ChangeOverlaySize(4) end)
+
+local overlayMoveButton = CreateButton(panel, "Mover overlay", 115, 22)
+overlayMoveButton:SetPoint("TOPLEFT", 25, -420)
+
+local overlayMoveStatus = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+overlayMoveStatus:SetPoint("LEFT", overlayMoveButton, "RIGHT", 12, 0)
+
+overlayMoveButton:SetScript("OnClick", function()
+  if TP.Overlay and TP.Overlay.Toggle then
+    TP.Overlay.Toggle()
+  end
+  UI.Refresh()
+end)
+
 function UI.Refresh()
   for i = 1, TP.USE_MAX do
     local entry = TrinketPriorityDB.use[i]
@@ -120,6 +161,17 @@ function UI.Refresh()
     passiveText:SetText(TrinketPriorityDB.passive.name or tostring(TrinketPriorityDB.passive.id))
   else
     passiveText:SetText("Ninguno")
+  end
+
+  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  local overlaySize = tonumber(TrinketPriorityDB.overlay.iconSize) or 48
+  if overlaySizeText then overlaySizeText:SetText(overlaySize .. " px") end
+
+  local movable = TrinketPriorityDB.overlay.movable == true
+  if movable then
+    if overlayMoveStatus then overlayMoveStatus:SetText("Movible: arrastra") end
+  else
+    if overlayMoveStatus then overlayMoveStatus:SetText("Posición bloqueada") end
   end
 end
 

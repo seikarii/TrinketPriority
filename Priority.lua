@@ -89,6 +89,7 @@ function Priority.ProcessRequest()
   end
 
   pending = false
+  Priority.RefreshOverlayState() -- Refresh overlay state after processing priority
 end
 
 function Priority.CancelTimer()
@@ -132,4 +133,15 @@ function Priority.Request()
 
   pending = true
   Priority.ScheduleRequest()
+end
+
+function Priority.GetNextUseCandidate()
+  if not CurrentTrinketWasUsed() then return nil end
+  return FindAvailableUseTrinket()
+end
+
+function Priority.RefreshOverlayState()
+  if TP.Overlay and TP.Overlay.Refresh then
+    TP.Overlay.Refresh()
+  end
 end
