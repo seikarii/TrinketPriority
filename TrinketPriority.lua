@@ -14,12 +14,6 @@ local ui = CreateFrame("Frame", "TrinketPriorityOptions", UIParent)
 ui:SetWidth(420)
 ui:SetHeight(430)
 ui:SetPoint("CENTER")
-ui:SetBackdrop({
-  bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-  edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-  tile = true, tileSize = 32, edgeSize = 32,
-  insets = { left = 11, right = 12, top = 12, bottom = 11 }
-})
 ui:SetMovable(true)
 ui:EnableMouse(true)
 ui:RegisterForDrag("LeftButton")
