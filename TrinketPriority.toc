@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: Trinket Priority
+## Notes: Equips a priority trinket out of combat.
+## Author: Forever
+## SavedVariables: TrinketPriorityDB
+
+TrinketPriority.lua
