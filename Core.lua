@@ -20,6 +20,8 @@ local function GetCharacterKey()
   return name .. "-" .. realm
 end
 
+local initializedCharacter
+
 ---@param value any
 ---@return table
 local function CopyEntryList(value)
@@ -81,6 +83,8 @@ function TP.InitDatabase()
 
   db.schema = tonumber(db.schema) or TP.DB_SCHEMA
   db.characters = type(db.characters) == "table" and db.characters or {}
+  local key = GetCharacterKey()
+  if initializedCharacter == key then return db.characters[key] end
 
   -- Migration: copy the former account-wide use/passive/overlay data into one
   -- character's first profile. Existing characters created afterwards start empty.
@@ -107,7 +111,7 @@ function TP.InitDatabase()
   end
 
   db.schema = TP.DB_SCHEMA
-  local key = GetCharacterKey()
+  key = GetCharacterKey()
   local character = db.characters[key]
   if type(character) ~= "table" then
     character = { activeProfile = TP.PROFILE_NAMES[1], profiles = {} }
@@ -137,15 +141,15 @@ function TP.InitDatabase()
   db.use = nil
   db.passive = nil
   db.overlay = nil
+  initializedCharacter = key
   return character
 end
 
 ---@param profileName string|nil
 ---@return table
 function TP.GetProfile(profileName)
-  TP.InitDatabase()
+  local character = TP.InitDatabase()
   local db = TrinketPriorityDB
-  local character = db.characters[TP.GetCharacterKey()]
   profileName = profileName or character.activeProfile
   local profile = character.profiles[profileName]
   if type(profile) ~= "table" then
@@ -161,8 +165,7 @@ end
 
 ---@return string
 function TP.GetActiveProfileName()
-  TP.InitDatabase()
-  local character = TrinketPriorityDB.characters[TP.GetCharacterKey()]
+  local character = TP.InitDatabase()
   return character.activeProfile
 end
 
@@ -177,7 +180,8 @@ function TP.SwitchProfile(profileName)
   TP.Print("Perfil activo: " .. profileName)
   if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
   if TP.Overlay and TP.Overlay.RestoreProfilePosition then TP.Overlay.RestoreProfilePosition() end
-  if TP.Overlay and TP.Overlay.Refresh then TP.Overlay.Refresh() end
+  if TP.Priority and TP.Priority.RefreshOverlayState then TP.Priority.RefreshOverlayState()
+  elseif TP.Overlay and TP.Overlay.Refresh then TP.Overlay.Refresh() end
   return true
 end
 

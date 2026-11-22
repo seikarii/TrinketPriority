@@ -2,6 +2,7 @@ local TP = TrinketPriority
 TP.Inventory = {}
 
 local Inventory = TP.Inventory
+local snapshot
 
 local function ContainerNumSlots(bag)
   if C_Container and C_Container.GetContainerNumSlots then
@@ -19,6 +20,23 @@ local function ContainerItemLink(bag, slot)
     return GetContainerItemLink(bag, slot)
   end
   return nil
+end
+
+function Inventory.InvalidateSnapshot() snapshot = nil end
+
+function Inventory.GetSnapshot()
+  if snapshot then return snapshot end
+  local data = { equipped = {}, byItemID = {} }
+  for _, slot in ipairs({ 13, 14 }) do data.equipped[slot] = TP.ItemID(TP.InventoryLink(slot)) end
+  for bag = 0, 4 do
+    local count = ContainerNumSlots(bag) or 0
+    for slot = 1, count do
+      local id = TP.ItemID(ContainerItemLink(bag, slot))
+      if id and not data.byItemID[id] then data.byItemID[id] = { bag = bag, slot = slot } end
+    end
+  end
+  snapshot = data
+  return snapshot
 end
 
 local function ContainerItemCooldown(bag, slot)
@@ -65,15 +83,8 @@ function Inventory.BagInfo(bag, slot)
 end
 
 function Inventory.FindBagItem(id)
-  for bag = 0, 4 do
-    local numSlots = ContainerNumSlots(bag)
-    if numSlots then
-      for slot = 1, numSlots do
-        local bagId = Inventory.BagInfo(bag, slot)
-        if bagId == id then return bag, slot end
-      end
-    end
-  end
+  local item = Inventory.GetSnapshot().byItemID[id]
+  if item then return item.bag, item.slot end
   return nil
 end
 
@@ -83,17 +94,23 @@ function Inventory.BagCooldown(bag, slot)
 end
 
 function Inventory.IsEquippedInSlot13(id)
-  return TP.ItemID(TP.InventoryLink(13)) == id
+  return Inventory.GetSnapshot().equipped[13] == id
 end
 
 function Inventory.EquipItem(id)
+  id = tonumber(id)
+  if not id then return false end
+  Inventory.InvalidateSnapshot()
   local bag, slot = Inventory.FindBagItem(id)
   if bag then
-    ClearCursorCompat()
-    PickupContainerItemCompat(bag, slot)
-    if CursorHasItemCompat() then EquipCursorAtSlot(13) end
-    if CursorHasItemCompat() then ClearCursorCompat() end
-    return true
+    if not CursorHasItemCompat() then
+      ClearCursorCompat()
+      PickupContainerItemCompat(bag, slot)
+      if CursorHasItemCompat() then EquipCursorAtSlot(13) end
+      if CursorHasItemCompat() then ClearCursorCompat() end
+    end
+    Inventory.InvalidateSnapshot()
+    return not CursorHasItemCompat() and TP.ItemID(TP.InventoryLink(13)) == id
   end
 
   local id14 = TP.ItemID(TP.InventoryLink(14))
@@ -102,9 +119,11 @@ function Inventory.EquipItem(id)
     if PickupInventoryItem then PickupInventoryItem(14) end
     if CursorHasItemCompat() then EquipCursorAtSlot(13) end
     if CursorHasItemCompat() then ClearCursorCompat() end
-    return true
+    Inventory.InvalidateSnapshot()
+    return not CursorHasItemCompat() and TP.ItemID(TP.InventoryLink(13)) == id
   end
 
+  Inventory.InvalidateSnapshot()
   return false
 end
 

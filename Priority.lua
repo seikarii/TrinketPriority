@@ -8,6 +8,7 @@ local elapsedPending = 0
 local manualPending = false
 local manualPendingId = nil
 local manualPendingName = nil
+Priority.TRINKET_COOLDOWN_THRESHOLD = 30 -- Conserva la ventana histórica de disponibilidad para swaps.
 
 local function CancelPendingTimer()
   elapsedPending = 0
@@ -16,17 +17,18 @@ end
 
 local function FindAvailableUseTrinket()
   local profile = TP.GetActiveProfile()
-  local equipped14 = TP.ItemID(TP.InventoryLink(14))
+  local snapshot = Inventory.GetSnapshot()
+  local equipped14 = snapshot.equipped[14]
   for i = 1, table.getn(profile.use) do
     local entry = profile.use[i]
     if entry and entry.id and not Inventory.IsEquippedInSlot13(entry.id) then
       if equipped14 == entry.id then
-        if TP.InventoryCooldown(14) <= 30 then return entry end
+        if TP.InventoryCooldown(14) <= Priority.TRINKET_COOLDOWN_THRESHOLD then return entry end
       else
         local bag, bagSlot = Inventory.FindBagItem(entry.id)
         if bag then
           local cooldown = Inventory.BagCooldown(bag, bagSlot)
-          if cooldown <= 30 then return entry end
+          if cooldown <= Priority.TRINKET_COOLDOWN_THRESHOLD then return entry end
         end
       end
     end
@@ -57,7 +59,7 @@ local function CurrentTrinketWasUsed()
   for i = 1, table.getn(profile.use) do
     local entry = profile.use[i]
     if entry and entry.id == id13 then
-      return TP.InventoryCooldown(13) > 30
+      return TP.InventoryCooldown(13) > Priority.TRINKET_COOLDOWN_THRESHOLD
     end
   end
 
@@ -227,70 +229,8 @@ function Priority.GetNextUseCandidate()
 end
 
 function Priority.RefreshOverlayState()
+  Priority.cachedCandidate = Priority.GetNextUseCandidate()
   if TP.Overlay and TP.Overlay.Refresh then
     TP.Overlay.Refresh()
   end
-end
-
-function Priority.ManualRequest(trinketId, trinketName)
-  if TP.IsPlayerDeadOrGhost() then
-    TP.Print("No se puede equipar el trinket mientras estás muerto o en estado de fantasma.")
-    return
-  end
-
-  if TP.IsPlayerInCombat() then
-    manualPending = true
-    manualPendingId = trinketId
-    manualPendingName = trinketName
-    TP.Print("Solicitud manual guardada para equipar " .. trinketName .. ". Se procesará al salir de combate.")
-    return
-  end
-
-  local itemLink = TP.InventoryLinkByID(trinketId)
-  if itemLink then
-    EquipItemByLink(itemLink)
-    TP.Print("Equipado manualmente: " .. trinketName)
-  else
-    TP.Print("Trinket no encontrado en el inventario.")
-  end
-end
-
-function Priority.ProcessManualRequest()
-  if not manualPendingId then return end
-
-  local itemLink = TP.InventoryLinkByID(manualPendingId)
-  if itemLink then
-    EquipItemByLink(itemLink)
-    TP.Print("Equipado manualmente: " .. (manualPendingName or tostring(manualPendingId)))
-  else
-    TP.Print("Trinket no encontrado en el inventario.")
-  end
-
-  manualPending = false
-  manualPendingId = nil
-  manualPendingName = nil
-end
-
-EquipItemByLink = function(itemLink)
-  local id = TP.ItemID(itemLink)
-  if not id then return false end
-  return Inventory.EquipItem(id)
-end
-
-TP.InventoryLinkByID = TP.InventoryLinkByID or function(id)
-  id = tonumber(id)
-  if not id then return nil end
-  for _, slot in ipairs({ 13, 14 }) do
-    local inventoryLink = TP.InventoryLink(slot)
-    if TP.ItemID(inventoryLink) == id then return inventoryLink end
-  end
-  local bag, bagSlot = Inventory.FindBagItem(id)
-  if bag then
-    if C_Container and C_Container.GetContainerItemLink then
-      return C_Container.GetContainerItemLink(bag, bagSlot)
-    elseif GetContainerItemLink then
-      return GetContainerItemLink(bag, bagSlot)
-    end
-  end
-  return nil
 end

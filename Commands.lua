@@ -36,13 +36,13 @@ function Commands.Register()
         TP.Config.SetPassiveFromSlot(slot)
       end
     elseif command == "removeuse" then
-      TP.Config.RemoveUse(tonumber(rest))
+      if not TP.Config.RemoveUse(tonumber(rest)) then TP.Print("Uso: /trinket removeuse N (índice existente)") end
     elseif command == "removepassive" then
       TP.Config.RemovePassive()
     elseif command == "up" then
-      TP.Config.MoveUse(tonumber(rest), -1)
+      if not TP.Config.MoveUse(tonumber(rest), -1) then TP.Print("Uso: /trinket up N (índice movible)") end
     elseif command == "down" then
-      TP.Config.MoveUse(tonumber(rest), 1)
+      if not TP.Config.MoveUse(tonumber(rest), 1) then TP.Print("Uso: /trinket down N (índice movible)") end
     elseif command == "clear" then
       TP.Config.Clear()
     elseif command == "list" or command == "status" then

@@ -5,7 +5,8 @@ local Config = TP.Config
 
 function Config.RefreshUI()
   if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
-  if TP.Overlay and TP.Overlay.Refresh then TP.Overlay.Refresh() end
+  if TP.Priority and TP.Priority.RefreshOverlayState then TP.Priority.RefreshOverlayState()
+  elseif TP.Overlay and TP.Overlay.Refresh then TP.Overlay.Refresh() end
 end
 
 local function ActiveProfile()
@@ -55,21 +56,26 @@ function Config.SetPassiveFromSlot(slot)
 end
 
 function Config.RemoveUse(index)
+  if type(index) ~= "number" or index ~= math.floor(index) or index < 1 then return false end
   local profile = ActiveProfile()
   if profile.use[index] then
     table.remove(profile.use, index)
     Config.RefreshUI()
+    return true
   end
+  return false
 end
 
 function Config.MoveUse(index, delta)
+  if type(index) ~= "number" or index ~= math.floor(index) or type(delta) ~= "number" or delta ~= math.floor(delta) then return false end
   local profile = ActiveProfile()
   local target = index + delta
-  if index < 1 or index > table.getn(profile.use) then return end
-  if target < 1 or target > table.getn(profile.use) then return end
+  if index < 1 or index > table.getn(profile.use) then return false end
+  if target < 1 or target > table.getn(profile.use) then return false end
 
   profile.use[index], profile.use[target] = profile.use[target], profile.use[index]
   Config.RefreshUI()
+  return true
 end
 
 function Config.RemovePassive()

@@ -1,5 +1,5 @@
 -- Self-contained minimap smoke/unit/benchmark harness.
--- Run with: lua MinimapTests.lua (from this addon directory)
+-- Run from the addon root with: lua tests/MinimapTests.lua (from this addon directory)
 
 local function Frame()
   local frame = { scripts = {}, points = {}, shown = false }

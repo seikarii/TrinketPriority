@@ -47,11 +47,11 @@ end
 
 local function RestorePosition()
   local pos = GetProfileSettings()
+  frame:ClearAllPoints()
   if type(pos) ~= "table" or not pos.point then
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     return
   end
-  frame:ClearAllPoints()
   frame:SetPoint(pos.point, UIParent, pos.relativePoint or pos.point, pos.x or 0, pos.y or 0)
 end
 
@@ -191,9 +191,9 @@ function Overlay.Refresh()
   local count = table.getn(profile.use)
   RefreshLayout(count)
 
-  local id13 = TP.ItemID(TP.InventoryLink(13))
-  local id14 = TP.ItemID(TP.InventoryLink(14))
-  local nextEntry = TP.Priority and TP.Priority.GetNextUseCandidate and TP.Priority.GetNextUseCandidate() or nil
+  local snapshot = TP.Inventory.GetSnapshot()
+  local id13, id14 = snapshot.equipped[13], snapshot.equipped[14]
+  local nextEntry = TP.Priority and TP.Priority.cachedCandidate or nil
 
   for i = 1, TP.USE_MAX do
     local icon = icons[i] or CreateIcon(i)
