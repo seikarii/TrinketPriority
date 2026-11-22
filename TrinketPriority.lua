@@ -34,7 +34,12 @@ end
 
 local function ItemName(link, id)
   if link then
-    local name = GetItemInfo(id)
+    local name
+    if C_Item and C_Item.GetItemInfo then
+      name = C_Item.GetItemInfo(id)
+    elseif GetItemInfo then
+      name = GetItemInfo(id)
+    end
     if name then return name end
     local coloredName = string.match(link, "%[(.-)%]")
     if coloredName then return coloredName end
@@ -53,8 +58,43 @@ local function InventoryInfo(slot)
   return id, ItemName(link, id), link
 end
 
+local function ContainerNumSlots(bag)
+  if C_Container and C_Container.GetContainerNumSlots then
+    return C_Container.GetContainerNumSlots(bag)
+  elseif GetContainerNumSlots then
+    return GetContainerNumSlots(bag)
+  end
+  return 0
+end
+
+local function ContainerItemLink(bag, slot)
+  if C_Container and C_Container.GetContainerItemLink then
+    return C_Container.GetContainerItemLink(bag, slot)
+  elseif GetContainerItemLink then
+    return GetContainerItemLink(bag, slot)
+  end
+  return nil
+end
+
+local function ContainerItemCooldown(bag, slot)
+  if C_Container and C_Container.GetContainerItemCooldown then
+    return C_Container.GetContainerItemCooldown(bag, slot)
+  elseif GetContainerItemCooldown then
+    return GetContainerItemCooldown(bag, slot)
+  end
+  return 0, 0
+end
+
+local function PickupContainerItemCompat(bag, slot)
+  if C_Container and C_Container.PickupContainerItem then
+    C_Container.PickupContainerItem(bag, slot)
+  elseif PickupContainerItem then
+    PickupContainerItem(bag, slot)
+  end
+end
+
 local function BagInfo(bag, slot)
-  local link = GetContainerItemLink(bag, slot)
+  local link = ContainerItemLink(bag, slot)
   local id = ItemID(link)
   if not id then return nil end
   return id, ItemName(link, id), link
@@ -62,7 +102,7 @@ end
 
 local function FindBagItem(id)
   for bag = 0, 4 do
-    local numSlots = GetContainerNumSlots(bag)
+    local numSlots = ContainerNumSlots(bag)
     if numSlots then
       for slot = 1, numSlots do
         local bagId = BagInfo(bag, slot)
@@ -86,11 +126,8 @@ local function InventoryCooldown(slot)
 end
 
 local function BagCooldown(bag, slot)
-  if GetContainerItemCooldown then
-    local startTime, duration = GetContainerItemCooldown(bag, slot)
-    return RemainingCooldown(startTime, duration)
-  end
-  return 0
+  local startTime, duration = ContainerItemCooldown(bag, slot)
+  return RemainingCooldown(startTime, duration)
 end
 
 local function AddEntry(list, id, name)
