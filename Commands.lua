@@ -14,6 +14,13 @@ function Commands.Register()
 
     if command == "" or command == "go" then
       TP.Priority.Request()
+    elseif command == "profile" then
+      if rest == "" then
+        TP.Print("Perfil activo: " .. TP.GetActiveProfileName())
+        TP.Print("Uso: /trinket profile 1|2|3")
+      elseif TP.Profiles then
+        TP.Profiles.Switch(rest)
+      end
     elseif command == "adduse" then
       local slot = tonumber(rest)
       if slot ~= 13 and slot ~= 14 then
@@ -48,12 +55,13 @@ function Commands.Register()
       end
     elseif command == "help" then
       TP.Print("/trinket - ejecuta priority")
+      TP.Print("/trinket profile 1|2|3 - cambia perfil")
       TP.Print("/trinket adduse 13|14 - añade equipado")
       TP.Print("/trinket passive 13|14 - establece pasivo")
       TP.Print("/trinket removeuse N - elimina prioridad N")
       TP.Print("/trinket removepassive - elimina pasivo")
       TP.Print("/trinket up|down N - mueve una prioridad")
-      TP.Print("/trinket list - muestra listas")
+      TP.Print("/trinket list - muestra perfil y listas")
       TP.Print("/trinket overlay - bloquea/desbloquea el movimiento del overlay")
     else
       TP.UI.Toggle()

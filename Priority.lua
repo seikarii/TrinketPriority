@@ -12,9 +12,10 @@ local function CancelPendingTimer()
 end
 
 local function FindAvailableUseTrinket()
+  local profile = TP.GetActiveProfile()
   local equipped14 = TP.ItemID(TP.InventoryLink(14))
-  for i = 1, table.getn(TrinketPriorityDB.use) do
-    local entry = TrinketPriorityDB.use[i]
+  for i = 1, table.getn(profile.use) do
+    local entry = profile.use[i]
     if entry and entry.id and not Inventory.IsEquippedInSlot13(entry.id) then
       if equipped14 == entry.id then
         if TP.InventoryCooldown(14) <= 30 then return entry end
@@ -31,7 +32,7 @@ local function FindAvailableUseTrinket()
 end
 
 local function FindPassiveTrinket()
-  local passive = TrinketPriorityDB.passive
+  local passive = TP.GetActiveProfile().passive
   if not passive or not passive.id then return nil end
   if Inventory.IsEquippedInSlot13(passive.id) then return nil end
   if Inventory.FindBagItem(passive.id) or TP.ItemID(TP.InventoryLink(14)) == passive.id then
@@ -44,13 +45,14 @@ local function CurrentTrinketWasUsed()
   local id13 = TP.ItemID(TP.InventoryLink(13))
   if not id13 then return false end
 
-  local passive = TrinketPriorityDB.passive
+  local profile = TP.GetActiveProfile()
+  local passive = profile.passive
   if passive and passive.id == id13 then
     return true
   end
 
-  for i = 1, table.getn(TrinketPriorityDB.use) do
-    local entry = TrinketPriorityDB.use[i]
+  for i = 1, table.getn(profile.use) do
+    local entry = profile.use[i]
     if entry and entry.id == id13 then
       return TP.InventoryCooldown(13) > 30
     end

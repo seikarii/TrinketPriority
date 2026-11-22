@@ -12,7 +12,8 @@ frame:RegisterEvent("PLAYER_UNGHOST")
 
 frame:SetScript("OnEvent", function(self, event, arg1)
   if event == "ADDON_LOADED" and arg1 == TP.ADDON_NAME then
-    TrinketPriorityDB.use = TrinketPriorityDB.use or {}
+    TP.InitDatabase()
+    if TP.Profiles and TP.Profiles.Refresh then TP.Profiles.Refresh() end
     if TP.Overlay and TP.Overlay.Initialize then TP.Overlay.Initialize() end
     if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
   elseif event == "PLAYER_REGEN_DISABLED" then

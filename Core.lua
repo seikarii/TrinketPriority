@@ -5,13 +5,185 @@ local TP = TrinketPriority
 TP.ADDON_NAME = "TrinketPriority"
 TP.USE_MAX = 7
 TP.COMBAT_DELAY = 0.1
+TP.DB_SCHEMA = 2
+TP.PROFILE_NAMES = { "Perfil 1", "Perfil 2", "Perfil 3" }
 
 TrinketPriorityDB = TrinketPriorityDB or {}
-if type(TrinketPriorityDB.use) ~= "table" then TrinketPriorityDB.use = {} end
+
+---@return string
+local function GetCharacterKey()
+  local name = UnitName and UnitName("player") or nil
+  local realm = GetRealmName and GetRealmName() or nil
+  if not name or name == "" then name = "Unknown" end
+  if not realm or realm == "" then realm = "UnknownRealm" end
+  realm = string.gsub(realm, "%s+", "")
+  return name .. "-" .. realm
+end
+
+---@param value any
+---@return table
+local function CopyEntryList(value)
+  local copy = {}
+  if type(value) ~= "table" then return copy end
+  for i = 1, table.getn(value) do
+    local entry = value[i]
+    if type(entry) == "table" and entry.id then
+      copy[i] = { id = entry.id, name = entry.name }
+    end
+  end
+  return copy
+end
+
+---@param value any
+---@return table|nil
+local function CopyPassive(value)
+  if type(value) ~= "table" or not value.id then return nil end
+  return { id = value.id, name = value.name }
+end
+
+---@param value any
+---@return table
+local function CopyOverlay(value)
+  local copy = {}
+  if type(value) ~= "table" then return copy end
+  copy.iconSize = tonumber(value.iconSize) or 48
+  copy.movable = value.movable == true
+  copy.point = value.point
+  copy.relativePoint = value.relativePoint
+  copy.x = value.x
+  copy.y = value.y
+  return copy
+end
+
+---@param name string
+---@return table
+local function CreateProfile(name)
+  return {
+    name = name,
+    use = {},
+    passive = nil,
+    overlay = { iconSize = 48, movable = false },
+  }
+end
+
+---@return string
+function TP.GetCharacterKey()
+  return GetCharacterKey()
+end
+
+---@return table
+function TP.InitDatabase()
+  local db = TrinketPriorityDB
+  if type(db) ~= "table" then
+    db = {}
+    TrinketPriorityDB = db
+  end
+
+  db.schema = tonumber(db.schema) or TP.DB_SCHEMA
+  db.characters = type(db.characters) == "table" and db.characters or {}
+
+  -- Migration: copy the former account-wide use/passive/overlay data into one
+  -- character's first profile. Existing characters created afterwards start empty.
+  if db.schema < TP.DB_SCHEMA or db.legacyMigrated ~= true then
+    if type(db.use) == "table" or db.passive ~= nil or type(db.overlay) == "table" then
+      local key = GetCharacterKey()
+      local character = db.characters[key]
+      if type(character) ~= "table" then
+        character = { activeProfile = TP.PROFILE_NAMES[1], profiles = {} }
+        db.characters[key] = character
+      end
+      character.profiles = type(character.profiles) == "table" and character.profiles or {}
+      local first = character.profiles[TP.PROFILE_NAMES[1]]
+      if type(first) ~= "table" then
+        first = CreateProfile(TP.PROFILE_NAMES[1])
+        character.profiles[TP.PROFILE_NAMES[1]] = first
+      end
+      first.use = CopyEntryList(db.use)
+      first.passive = CopyPassive(db.passive)
+      first.overlay = CopyOverlay(db.overlay)
+      character.activeProfile = TP.PROFILE_NAMES[1]
+    end
+    db.legacyMigrated = true
+  end
+
+  db.schema = TP.DB_SCHEMA
+  local key = GetCharacterKey()
+  local character = db.characters[key]
+  if type(character) ~= "table" then
+    character = { activeProfile = TP.PROFILE_NAMES[1], profiles = {} }
+    db.characters[key] = character
+  end
+  character.profiles = type(character.profiles) == "table" and character.profiles or {}
+
+  for i = 1, #TP.PROFILE_NAMES do
+    local profileName = TP.PROFILE_NAMES[i]
+    local profile = character.profiles[profileName]
+    if type(profile) ~= "table" then
+      profile = CreateProfile(profileName)
+      character.profiles[profileName] = profile
+    end
+    profile.name = profileName
+    if type(profile.use) ~= "table" then profile.use = {} end
+    if type(profile.overlay) ~= "table" then profile.overlay = { iconSize = 48, movable = false } end
+  end
+
+  if character.profiles[character.activeProfile] == nil then
+    character.activeProfile = TP.PROFILE_NAMES[1]
+  end
+
+  -- Remove legacy account-wide fields after migration.
+  db.use = nil
+  db.passive = nil
+  db.overlay = nil
+  return character
+end
+
+---@param profileName string|nil
+---@return table
+function TP.GetProfile(profileName)
+  TP.InitDatabase()
+  local db = TrinketPriorityDB
+  local character = db.characters[TP.GetCharacterKey()]
+  profileName = profileName or character.activeProfile
+  local profile = character.profiles[profileName]
+  if type(profile) ~= "table" then
+    profile = character.profiles[TP.PROFILE_NAMES[1]]
+  end
+  return profile
+end
+
+---@return table
+function TP.GetActiveProfile()
+  return TP.GetProfile()
+end
+
+---@return string
+function TP.GetActiveProfileName()
+  TP.InitDatabase()
+  local character = TrinketPriorityDB.characters[TP.GetCharacterKey()]
+  return character.activeProfile
+end
+
+---@param profileName string
+---@return boolean
+function TP.SwitchProfile(profileName)
+  TP.InitDatabase()
+  if not profileName then return false end
+  local character = TrinketPriorityDB.characters[TP.GetCharacterKey()]
+  if character.profiles[profileName] == nil then return false end
+  character.activeProfile = profileName
+  TP.Print("Perfil activo: " .. profileName)
+  if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
+  if TP.Overlay and TP.Overlay.RestoreProfilePosition then TP.Overlay.RestoreProfilePosition() end
+  if TP.Overlay and TP.Overlay.Refresh then TP.Overlay.Refresh() end
+  return true
+end
 
 function TP.Print(msg)
   DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99TrinketPriority|r: " .. tostring(msg))
 end
+
+TP.InitDatabase()
 
 function TP.ItemID(link)
   if not link then return nil end

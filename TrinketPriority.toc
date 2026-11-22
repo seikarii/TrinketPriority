@@ -2,7 +2,7 @@
 ## Title: Trinket Priority
 ## Notes: Equips a priority trinket out of combat.
 ## Author: Seikarii, luna
-## Version: 1.2.0
+## Version: 1.3.0
 ## IconTexture: 130000
 ## SavedVariables: TrinketPriorityDB
 
@@ -12,6 +12,7 @@ Config.lua
 Priority.lua
 Overlay.lua
 UI.lua
+Profiles.lua
 Commands.lua
 Main.lua
 

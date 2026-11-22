@@ -8,13 +8,19 @@ local statusText
 
 local ICON_GAP = 8
 
+local function GetProfileSettings()
+  local profile = TP.GetActiveProfile()
+  profile.overlay = type(profile.overlay) == "table" and profile.overlay or { iconSize = 48, movable = false }
+  return profile.overlay
+end
+
 local function GetIconSize()
-  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
-  local size = tonumber(TrinketPriorityDB.overlay.iconSize)
+  local settings = GetProfileSettings()
+  local size = tonumber(settings.iconSize)
   if not size then size = 48 end
   if size < 24 then size = 24 end
   if size > 96 then size = 96 end
-  TrinketPriorityDB.overlay.iconSize = size
+  settings.iconSize = size
   return size
 end
 
@@ -32,15 +38,15 @@ end
 local function SavePosition()
   if not frame then return end
   local point, _, relativePoint, x, y = frame:GetPoint()
-  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
-  TrinketPriorityDB.overlay.point = point or "CENTER"
-  TrinketPriorityDB.overlay.relativePoint = relativePoint or "CENTER"
-  TrinketPriorityDB.overlay.x = x or 0
-  TrinketPriorityDB.overlay.y = y or 0
+  local settings = GetProfileSettings()
+  settings.point = point or "CENTER"
+  settings.relativePoint = relativePoint or "CENTER"
+  settings.x = x or 0
+  settings.y = y or 0
 end
 
 local function RestorePosition()
-  local pos = TrinketPriorityDB.overlay
+  local pos = GetProfileSettings()
   if type(pos) ~= "table" or not pos.point then
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     return
@@ -101,7 +107,7 @@ local function CreateIcon(index)
   icon:EnableMouse(true)
   icon:RegisterForDrag("LeftButton")
   icon:SetScript("OnDragStart", function()
-    if TrinketPriorityDB.overlay and TrinketPriorityDB.overlay.movable then
+    if GetProfileSettings().movable then
       frame:StartMoving()
     end
   end)
@@ -175,8 +181,9 @@ end
 function Overlay.Refresh()
   if not frame then return end
 
-  TrinketPriorityDB.use = TrinketPriorityDB.use or {}
-  local count = table.getn(TrinketPriorityDB.use)
+  local profile = TP.GetActiveProfile()
+  profile.use = type(profile.use) == "table" and profile.use or {}
+  local count = table.getn(profile.use)
   RefreshLayout(count)
 
   local id13 = TP.ItemID(TP.InventoryLink(13))
@@ -185,7 +192,7 @@ function Overlay.Refresh()
 
   for i = 1, TP.USE_MAX do
     local icon = icons[i] or CreateIcon(i)
-    local entry = TrinketPriorityDB.use[i]
+    local entry = profile.use[i]
 
     if entry then
       icon.entry = entry
@@ -213,7 +220,6 @@ function Overlay.Refresh()
         icon.arrow:Hide()
       end
 
-      -- Mostrar únicamente el cooldown nativo del icono
       local startTime, duration = GetCooldownInfo(entry, id13, id14)
       local remaining = TP.RemainingCooldown(startTime, duration)
       if remaining > 0 and icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
@@ -238,12 +244,12 @@ end
 
 function Overlay.Toggle()
   if not frame then Overlay.Initialize() end
-  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
-  TrinketPriorityDB.overlay.movable = not (TrinketPriorityDB.overlay.movable == true)
-  frame:EnableMouse(TrinketPriorityDB.overlay.movable)
-  frame:SetMovable(TrinketPriorityDB.overlay.movable)
+  local settings = GetProfileSettings()
+  settings.movable = not (settings.movable == true)
+  frame:EnableMouse(settings.movable)
+  frame:SetMovable(settings.movable)
 
-  if TrinketPriorityDB.overlay.movable then
+  if settings.movable then
     TP.Print("Overlay desbloqueado: arrastra con el botón izquierdo.")
   else
     TP.Print("Overlay bloqueado en su posición.")
@@ -255,9 +261,13 @@ function Overlay.SetIconSize(size)
   if not size then return end
   if size < 24 then size = 24 end
   if size > 96 then size = 96 end
-  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
-  TrinketPriorityDB.overlay.iconSize = size
+  GetProfileSettings().iconSize = size
   if frame then Overlay.Refresh() end
+end
+
+function Overlay.RestoreProfilePosition()
+  if not frame then return end
+  RestorePosition()
 end
 
 function Overlay.Initialize()
@@ -267,17 +277,17 @@ function Overlay.Initialize()
     return
   end
 
-  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
+  local settings = GetProfileSettings()
   GetIconSize()
 
   frame = CreateFrame("Frame", "TrinketPriorityOverlay", UIParent)
   frame:SetHeight(GetIconSize() + 34)
-  frame:SetMovable(TrinketPriorityDB.overlay.movable == true)
-  frame:EnableMouse(TrinketPriorityDB.overlay.movable == true)
+  frame:SetMovable(settings.movable == true)
+  frame:EnableMouse(settings.movable == true)
   frame:RegisterForDrag("LeftButton")
   frame:SetFrameStrata("MEDIUM")
   frame:SetScript("OnDragStart", function(self)
-    if not TrinketPriorityDB.overlay.movable then return end
+    if not GetProfileSettings().movable then return end
     self:StartMoving()
   end)
   frame:SetScript("OnDragStop", function(self)
@@ -319,7 +329,7 @@ function Overlay.Initialize()
   dragArea:EnableMouse(true)
   dragArea:RegisterForDrag("LeftButton")
   dragArea:SetScript("OnDragStart", function()
-    if TrinketPriorityDB.overlay and TrinketPriorityDB.overlay.movable then
+    if GetProfileSettings().movable then
       frame:StartMoving()
     end
   end)
@@ -346,8 +356,7 @@ function Overlay.Hide()
 end
 
 function Overlay.Lock()
-  TrinketPriorityDB.overlay = TrinketPriorityDB.overlay or {}
-  TrinketPriorityDB.overlay.movable = false
+  GetProfileSettings().movable = false
   if frame then
     frame:EnableMouse(false)
     frame:SetMovable(false)
