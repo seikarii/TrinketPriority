@@ -57,7 +57,9 @@ local function CurrentTrinketWasUsed()
       return TP.InventoryCooldown(13) > 30
     end
   end
-  return false
+
+  -- A trinket outside the active lists has no usage condition: proceed to priority.
+  return true
 end
 
 function Priority.ProcessRequest()

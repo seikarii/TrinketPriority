@@ -56,4 +56,4 @@ Puedes usar también:
 /trinket
 ```
 
-El cambio se realiza únicamente fuera de combate y después de confirmar que el trinket del hueco 13 se ha puesto en cooldown. Si todos los trinkets de uso están en cooldown, equipa el pasivo configurado del perfil activo.
+El cambio se realiza únicamente fuera de combate. Si el trinket del hueco 13 pertenece a la lista de uso activa, se espera a confirmar que ha entrado en cooldown antes de cambiarlo. Si está fuera de la lista activa, se pasa directamente a la selección de prioridades sin comprobar su estado de uso o cooldown. Si todos los trinkets de uso están en cooldown, equipa el pasivo configurado del perfil activo.
