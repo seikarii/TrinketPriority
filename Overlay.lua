@@ -7,6 +7,11 @@ local icons = {}
 local statusText
 local lastState
 local layoutCount, layoutIconSize
+local itemIconCache = {}
+local itemIconAttempted = {}
+local itemIconRequested = {}
+local itemIconFailed = {}
+local FALLBACK_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 local ICON_GAP = 8
 
@@ -31,10 +36,31 @@ local function GetItemIcon(id)
     local icon = C_Item.GetItemIconByID(id)
     if icon then return icon end
   end
-  if GetItemIcon then
-    return GetItemIcon(id)
+  if _G and _G.GetItemIcon then
+    return _G.GetItemIcon(id)
   end
   return nil
+end
+
+local function ApplyItemIcon(icon, itemID)
+  local itemIcon = itemIconCache[itemID]
+  if not itemIcon and not itemIconAttempted[itemID] then
+    itemIconAttempted[itemID] = true
+    itemIcon = GetItemIcon(itemID)
+    if itemIcon then itemIconCache[itemID] = itemIcon end
+  end
+  if itemIcon then
+    icon.texture:SetTexture(itemIcon)
+    return
+  end
+
+  icon.texture:SetTexture(FALLBACK_ICON)
+  local itemApi = _G and _G.C_Item
+  if not itemIconRequested[itemID] and not itemIconFailed[itemID]
+    and itemApi and itemApi.RequestLoadItemDataByID then
+    itemIconRequested[itemID] = true
+    itemApi.RequestLoadItemDataByID(itemID)
+  end
 end
 
 local function SavePosition()
@@ -155,8 +181,15 @@ local function RefreshLayout(count)
 end
 
 function Overlay.Render(state)
-  if not frame then return end
-  state = state or {}
+  if type(state) ~= "table" or type(state.entries) ~= "table" or type(state.equipped) ~= "table"
+    or type(state.cooldowns) ~= "table"
+    or (state.candidate ~= nil and (type(state.candidate) ~= "table" or state.candidate.id == nil)) then
+    return false
+  end
+  for i = 1, #state.entries do
+    if type(state.entries[i]) ~= "table" or state.entries[i].id == nil then return false end
+  end
+  if not frame then return false end
   lastState = state
   local entries = state.entries or {}
   local count = #entries
@@ -175,8 +208,7 @@ function Overlay.Render(state)
 
       if icon.itemID ~= entry.id then
         icon.itemID = entry.id
-        local itemIcon = GetItemIcon(entry.id)
-        icon.texture:SetTexture(itemIcon or "Interface\\Icons\\INV_Misc_QuestionMark")
+        ApplyItemIcon(icon, entry.id)
       end
 
       local isEquipped = (entry.id == id13 or entry.id == id14)
@@ -202,13 +234,13 @@ function Overlay.Render(state)
       local remaining = TP.RemainingCooldown(startTime, duration)
       if icon.lastCooldownStart ~= startTime or icon.lastCooldownDuration ~= duration then
         icon.lastCooldownStart, icon.lastCooldownDuration = startTime, duration
-      if icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
-        if remaining > 0 then
-          icon.cooldownFrame:SetCooldown(startTime, duration)
-        else
-          icon.cooldownFrame:SetCooldown(0, 0)
+        if icon.cooldownFrame and icon.cooldownFrame.SetCooldown then
+          if remaining > 0 then
+            icon.cooldownFrame:SetCooldown(startTime, duration)
+          else
+            icon.cooldownFrame:SetCooldown(0, 0)
+          end
         end
-      end
       end
 
     else
@@ -225,17 +257,39 @@ function Overlay.Render(state)
     statusText.lastText = text
     statusText:SetText(text)
   end
+  return true
 end
 
 -- Compatibility alias: a no-argument refresh reuses the last valid render state.
 function Overlay.Refresh(state)
   if state then
-    Overlay.Render(state)
+    return Overlay.Render(state)
   elseif lastState then
-    Overlay.Render(lastState)
+    return Overlay.Render(lastState)
   elseif TP.Priority and TP.Priority.GetOverlayState then
-    Overlay.Render(TP.Priority.GetOverlayState())
+    local current = TP.Priority.GetOverlayState()
+    if current then return Overlay.Render(current) end
   end
+  return false
+end
+
+function Overlay.OnItemDataLoadResult(itemID, success)
+  itemID = tonumber(itemID)
+  if not itemID or not itemIconRequested[itemID] then return false end
+  itemIconRequested[itemID] = nil
+  itemIconAttempted[itemID] = nil
+  local itemIcon = success and GetItemIcon(itemID) or nil
+  if itemIcon then
+    itemIconCache[itemID] = itemIcon
+    itemIconFailed[itemID] = nil
+    for i = 1, TP.USE_MAX do
+      local icon = icons[i]
+      if icon and icon.itemID == itemID then icon.texture:SetTexture(itemIcon) end
+    end
+    return true
+  end
+  itemIconFailed[itemID] = true
+  return false
 end
 
 function Overlay.Toggle()
@@ -258,7 +312,10 @@ function Overlay.SetIconSize(size)
   if size < 24 then size = 24 end
   if size > 96 then size = 96 end
   GetProfileSettings().iconSize = size
-  if frame then RefreshLayout(layoutCount or 0) end
+  if frame then
+    local count = lastState and #lastState.entries or 0
+    RefreshLayout(count)
+  end
 end
 
 function Overlay.RestoreProfilePosition()

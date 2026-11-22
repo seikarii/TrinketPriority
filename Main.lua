@@ -2,6 +2,23 @@ local TP = TrinketPriority
 
 local frame = CreateFrame("Frame", "TrinketPriorityFrame")
 TP.Priority.frame = frame
+local inventoryRefreshScheduled = false
+
+local function RefreshInventoryState()
+  inventoryRefreshScheduled = false
+  if TP.Inventory then TP.Inventory.InvalidateSnapshot() end
+  if TP.Priority then TP.Priority.RefreshOverlayState() end
+end
+
+local function ScheduleInventoryRefresh()
+  if inventoryRefreshScheduled then return end
+  inventoryRefreshScheduled = true
+  if C_Timer and C_Timer.After then
+    C_Timer.After(0, RefreshInventoryState)
+  else
+    RefreshInventoryState()
+  end
+end
 
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -12,13 +29,15 @@ frame:RegisterEvent("PLAYER_UNGHOST")
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:RegisterEvent("UNIT_INVENTORY_CHANGED")
+frame:RegisterEvent("ITEM_DATA_LOAD_RESULT")
 frame:RegisterEvent("SPELL_UPDATE_COOLDOWN")
 frame:RegisterEvent("BAG_UPDATE_COOLDOWN")
 
-frame:SetScript("OnEvent", function(self, event, arg1)
+frame:SetScript("OnEvent", function(self, event, arg1, arg2)
   if event == "BAG_UPDATE_DELAYED" or event == "PLAYER_EQUIPMENT_CHANGED" or (event == "UNIT_INVENTORY_CHANGED" and arg1 == "player") then
-    if TP.Inventory then TP.Inventory.InvalidateSnapshot() end
-    if TP.Priority then TP.Priority.RefreshOverlayState() end
+    ScheduleInventoryRefresh()
+  elseif event == "ITEM_DATA_LOAD_RESULT" then
+    if TP.Overlay and TP.Overlay.OnItemDataLoadResult then TP.Overlay.OnItemDataLoadResult(arg1, arg2) end
   elseif event == "SPELL_UPDATE_COOLDOWN" or event == "BAG_UPDATE_COOLDOWN" then
     if TP.Priority then TP.Priority.RefreshOverlayState() end
   elseif event == "ADDON_LOADED" and arg1 == TP.ADDON_NAME then

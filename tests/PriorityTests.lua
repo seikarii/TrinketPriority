@@ -2,6 +2,7 @@
 local equipped = { [13] = "item:100", [14] = nil }
 local bagItems = { [0] = { [1] = "item:200", [2] = "item:201" } }
 local inCombat = false
+local bagCooldown = 0
 UnitName = function() return "Test" end
 GetRealmName = function() return "Realm" end
 DEFAULT_CHAT_FRAME = { AddMessage = function() end }
@@ -10,7 +11,7 @@ GetInventoryItemLink = function(_, slot) return equipped[slot] end
 GetInventoryItemCooldown = function(_, slot) if slot == 13 then return 0, 60 end return 0, 0 end
 GetContainerNumSlots = function(bag) return bag == 0 and 2 or 0 end
 GetContainerItemLink = function(bag, slot) return bagItems[bag] and bagItems[bag][slot] end
-GetContainerItemCooldown = function() return 0, 0 end
+GetContainerItemCooldown = function() return 0, bagCooldown end
 UnitAffectingCombat = function() return inCombat end
 UnitIsDeadOrGhost = function() return false end
 dofile("Core.lua")
@@ -87,4 +88,10 @@ TP.GetProfile("Perfil 2").use = { { id = 201, name = "Two" } }
 assert(TP.SwitchProfile("Perfil 2"))
 assert(rendered.entries == TP.GetActiveProfile().use)
 assert(rendered.entries[1].id == 201)
+bagCooldown = 60
+TP.Priority.RefreshOverlayState()
+assert(rendered.candidate == nil)
+bagCooldown = 0
+TP.Priority.RefreshOverlayState()
+assert(rendered.candidate and rendered.candidate.id == 201)
 print("Priority selection tests passed.")

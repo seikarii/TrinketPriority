@@ -46,16 +46,19 @@ Before refactoring, `Overlay.Refresh()` fetched active profile, snapshot, candid
 3. **Candidate scans repeated snapshot helper lookups.** Priority scans now use one snapshot's `equipped` and `byItemID` tables directly. A Priority refresh also builds the cooldown records for the overlay and passes one state object.
 4. **Lua 5.1 loop callback captures were unsafe.** UI row callbacks and profile tab callbacks capture a per-iteration local index.
 5. **Inventory equipment invalidation remains conservative.** Inventory is invalidated at the beginning/end of equip attempts because protected equipment changes can be asynchronous and bag links may be stale until the equipment event. Failed searches may invalidate unnecessarily; removing that invalidation is a small possible follow-up after validating all client APIs.
+6. **Late item icon data and invalid render state.** Overlay state is validated before replacing the last valid state. Missing icons request item data once using `C_Item.RequestLoadItemDataByID`; `ITEM_DATA_LOAD_RESULT` updates only currently displayed icons for that ID. Failed requests are remembered to prevent repeated requests.
+7. **Overlapping inventory/equipment notifications.** `BAG_UPDATE_DELAYED`, `PLAYER_EQUIPMENT_CHANGED` and player `UNIT_INVENTORY_CHANGED` are batched through one zero-delay `C_Timer.After` callback, so notifications in the same event dispatch frame cause one snapshot invalidation and Priority refresh.
 
 ## Event ownership and invalidation map
 
 | Event | Receiver | Action |
 | --- | --- | --- |
 | `ADDON_LOADED` for this addon | `Main.lua` | Initialize saved variables and UI/overlay/minimap; compute initial overlay state |
-| `BAG_UPDATE`, `BAG_UPDATE_DELAYED` | `Main.lua` | Invalidate inventory snapshot, recompute candidate and overlay state |
+| `BAG_UPDATE_DELAYED` | `Main.lua` | Schedule one coalesced inventory invalidation and state refresh |
 | `PLAYER_EQUIPMENT_CHANGED` | `Main.lua` | Invalidate inventory snapshot, recompute candidate and overlay state |
 | `UNIT_INVENTORY_CHANGED` for player | `Main.lua` | Same as equipment change |
 | `SPELL_UPDATE_COOLDOWN`, `BAG_UPDATE_COOLDOWN` | `Main.lua` | Recompute selection/cooldown display; cached inventory locations remain valid |
+| `ITEM_DATA_LOAD_RESULT` | `Main.lua`, then `Overlay` by item ID | Update matching visible icon texture only; no inventory snapshot or Priority refresh |
 | `PLAYER_REGEN_DISABLED`, `PLAYER_DEAD` | `Main.lua` | Cancel pending equip timer |
 | `PLAYER_REGEN_ENABLED`, `PLAYER_ALIVE`, `PLAYER_UNGHOST` | `Main.lua` | Schedule pending request if one exists |
 
@@ -64,7 +67,7 @@ There is one addon frame registering these events. The overlay is an event-free 
 ## Target flow after the change
 
 1. `Main.lua` receives an invalidating event.
-2. For inventory/equipment events, it invalidates the snapshot once per event.
+2. For inventory/equipment events, it schedules a zero-delay callback and invalidates once for all notifications in that frame.
 3. `Priority.RefreshOverlayState()` gets the cached/rebuilt snapshot, selects at most one next candidate, collects relevant cooldown data, and assembles an overlay state.
 4. `Overlay.Render(state)` updates layout, item icon textures, markers and native cooldown widgets without querying the inventory or selecting a candidate.
 
