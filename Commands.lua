@@ -14,6 +14,12 @@ function Commands.Register()
 
     if command == "" or command == "go" then
       TP.Priority.Request()
+    elseif command == "on" then
+      TP.SetAutomaticEnabled(true)
+      TP.Print("Modo automático activado.")
+    elseif command == "off" then
+      TP.SetAutomaticEnabled(false)
+      TP.Print("Modo automático desactivado.")
     elseif command == "profile" then
       if rest == "" then
         TP.Print("Perfil activo: " .. TP.GetActiveProfileName())
@@ -48,7 +54,15 @@ function Commands.Register()
     elseif command == "list" or command == "status" then
       TP.Config.List()
     elseif command == "options" or command == "ui" then
-      TP.UI.Toggle()
+      if rest == "on" then
+        TP.SetAutomaticEnabled(true)
+        TP.Print("Modo automático activado.")
+      elseif rest == "off" then
+        TP.SetAutomaticEnabled(false)
+        TP.Print("Modo automático desactivado.")
+      else
+        TP.UI.Toggle()
+      end
     elseif command == "overlay" then
       if TP.Overlay and TP.Overlay.Toggle then
         TP.Overlay.Toggle()
@@ -62,6 +76,7 @@ function Commands.Register()
       end
     elseif command == "help" then
       TP.Print("/trinket - ejecuta priority")
+      TP.Print("/trinket on|off - activa/desactiva el modo automático")
       TP.Print("/trinket profile 1|2|3 - cambia perfil")
       TP.Print("/trinket adduse 13|14 - añade equipado")
       TP.Print("/trinket passive 13|14 - establece pasivo")

@@ -30,6 +30,9 @@ Los datos existentes de las versiones anteriores (`use`, `passive` y `overlay`) 
 
 Ejecuta `/trinket ui` o `/trinket options` para abrir la lista.
 
+- El botón **Automático: ON/OFF** activa el cambio automático al salir de combate o al revivir.
+- También puedes activarlo o desactivarlo con `/trinket on` y `/trinket off` (o `/trinket ui on|off`). La preferencia se guarda por personaje.
+
 - Usa las pestañas Perfil 1/2/3 para cambiar de lista.
 - **Añadir hueco 13/14:** añade el trinket equipado al perfil activo.
 - Los botones del listado permiten subir, bajar o eliminar cada trinket.
@@ -38,6 +41,7 @@ Ejecuta `/trinket ui` o `/trinket options` para abrir la lista.
 Puedes usar también:
 
 - `/trinket profile 1|2|3`
+- `/trinket on` o `/trinket off`
 - `/trinket profile` para mostrar el perfil activo
 - `/trinket adduse 13` o `/trinket adduse 14`
 - `/trinket passive 13` o `/trinket passive 14`

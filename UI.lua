@@ -28,7 +28,7 @@ end
 
 local panel = CreateFrame("Frame", "TrinketPriorityOptions", UIParent)
 panel:SetWidth(420)
-panel:SetHeight(500)
+panel:SetHeight(540)
 panel:SetPoint("CENTER")
 panel:SetMovable(true)
 panel:EnableMouse(true)
@@ -60,6 +60,13 @@ add14:SetScript("OnClick", function() TP.Config.AddUseFromSlot(14) end)
 local close = CreateButton(panel, "Cerrar", 70, 24)
 close:SetPoint("TOPRIGHT", -20, -18)
 close:SetScript("OnClick", function() panel:Hide() end)
+
+local automaticButton = CreateButton(panel, "", 170, 24)
+automaticButton:SetPoint("BOTTOMLEFT", 25, 16)
+automaticButton:SetScript("OnClick", function()
+  TP.SetAutomaticEnabled(not TP.IsAutomaticEnabled())
+  TP.Print(TP.IsAutomaticEnabled() and "Modo automático activado." or "Modo automático desactivado.")
+end)
 
 local useTitle = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 useTitle:SetPoint("TOPLEFT", 25, -110)
@@ -180,6 +187,7 @@ function UI.Refresh()
   local profile = TP.GetActiveProfile()
   profile.use = type(profile.use) == "table" and profile.use or {}
   profile.overlay = type(profile.overlay) == "table" and profile.overlay or { iconSize = 48, movable = false }
+  automaticButton:SetText(TP.IsAutomaticEnabled() and "Automático: ON" or "Automático: OFF")
 
   for i = 1, TP.USE_MAX do
     local entry = profile.use[i]

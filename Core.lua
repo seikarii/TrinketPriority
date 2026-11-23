@@ -120,6 +120,7 @@ function TP.InitDatabase()
   character.profiles = type(character.profiles) == "table" and character.profiles or {}
 
   if type(character.minimapAngle) ~= "number" then character.minimapAngle = 225 end
+  if type(character.automatic) ~= "boolean" then character.automatic = false end
 
   for i = 1, #TP.PROFILE_NAMES do
     local profileName = TP.PROFILE_NAMES[i]
@@ -167,6 +168,21 @@ end
 function TP.GetActiveProfileName()
   local character = TP.InitDatabase()
   return character.activeProfile
+end
+
+---@return boolean
+function TP.IsAutomaticEnabled()
+  local character = TP.InitDatabase()
+  return character.automatic == true
+end
+
+---@param enabled boolean
+---@return boolean
+function TP.SetAutomaticEnabled(enabled)
+  local character = TP.InitDatabase()
+  character.automatic = enabled == true
+  if TP.UI and TP.UI.Refresh then TP.UI.Refresh() end
+  return character.automatic
 end
 
 ---@param profileName string
