@@ -2,6 +2,7 @@
 local registered, invalidations, refreshes, itemResults = {}, 0, 0, 0
 local timers = {}
 local frame = { scripts = {} }
+local requests = 0
 function frame:RegisterEvent(event) registered[event] = true end
 function frame:SetScript(name, callback) self.scripts[name] = callback end
 CreateFrame = function() return frame end
@@ -10,9 +11,11 @@ TrinketPriority = {
   ADDON_NAME = "TrinketPriority",
   Priority = { frame = {}, RefreshOverlayState = function() refreshes = refreshes + 1 end,
     HasPendingRequest = function() return false end, HasPendingManualRequest = function() return false end,
-    CancelTimer = function() end, ScheduleRequest = function() end },
+    CancelTimer = function() end, ScheduleRequest = function() end,
+    Request = function() requests = requests + 1 end },
   Inventory = { InvalidateSnapshot = function() invalidations = invalidations + 1 end },
   Overlay = { OnItemDataLoadResult = function(id, success) itemResults = itemResults + 1 end },
+  IsAutomaticEnabled = function() return true end,
   Commands = { Register = function() end },
 }
 dofile("Main.lua")
@@ -45,4 +48,8 @@ onEvent(frame, "SPELL_UPDATE_COOLDOWN")
 assert(invalidations == 2 and refreshes == 3)
 onEvent(frame, "BAG_UPDATE_COOLDOWN")
 assert(invalidations == 2 and refreshes == 4)
+
+onEvent(frame, "PLAYER_REGEN_ENABLED")
+assert(invalidations == 3)
+assert(requests == 1)
 print("Settled inventory event tests passed.")

@@ -50,6 +50,7 @@ frame:SetScript("OnEvent", function(self, event, arg1, arg2)
   elseif event == "PLAYER_REGEN_DISABLED" then
     if TP.Priority.HasPendingRequest() or TP.Priority.HasPendingManualRequest() then TP.Priority.CancelTimer() end
   elseif event == "PLAYER_REGEN_ENABLED" then
+    if TP.Inventory then TP.Inventory.InvalidateSnapshot() end
     if TP.Priority.HasPendingRequest() or TP.Priority.HasPendingManualRequest() then
       TP.Priority.ScheduleRequest()
     elseif TP.IsAutomaticEnabled and TP.IsAutomaticEnabled() then
