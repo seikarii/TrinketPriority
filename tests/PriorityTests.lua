@@ -61,6 +61,9 @@ assert(TP.Priority.HasPendingRequest())
 assert(TP.Priority.RequestManualEquip(201, "Manual 201"))
 assert(not TP.Priority.HasPendingRequest() and TP.Priority.HasPendingManualRequest())
 assert(TP.Priority.RequestManualEquip(200, "Manual 200"))
+local manualOverlayState = TP.Priority.GetOverlayState()
+assert(manualOverlayState and manualOverlayState.candidate.id == 200)
+assert(manualOverlayState.candidate.name == "Manual 200")
 inCombat = false
 TP.Priority.ScheduleRequest()
 local manualTimer = f.scripts.OnUpdate

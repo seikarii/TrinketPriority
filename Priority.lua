@@ -227,6 +227,7 @@ function Priority.RequestManualEquip(id, name)
     else
       TP.Print("Solicitud manual guardada. Se equipará al salir de combate.")
     end
+    Priority.RefreshOverlayState()
     return true
   end
 
@@ -262,8 +263,13 @@ function Priority.RefreshOverlayState()
     local entry = profile.use[i]
     if entry and entry.id then cooldowns[entry.id] = GetCooldownInfo(entry, snapshot) end
   end
+
   local candidate
-  if CurrentTrinketWasUsed(profile, snapshot, cooldowns) then candidate = FindAvailableUseTrinket(profile, snapshot, cooldowns) end
+  if manualPending then
+    candidate = { id = manualPendingId, name = manualPendingName }
+  elseif CurrentTrinketWasUsed(profile, snapshot, cooldowns) then
+    candidate = FindAvailableUseTrinket(profile, snapshot, cooldowns)
+  end
   Priority.cachedCandidate = candidate
   Priority.overlayState = { entries = profile.use, equipped = snapshot.equipped, cooldowns = cooldowns, candidate = candidate }
   if TP.Overlay and TP.Overlay.Render then TP.Overlay.Render(Priority.overlayState) end
