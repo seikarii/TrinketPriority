@@ -28,7 +28,7 @@ end
 
 local panel = CreateFrame("Frame", "TrinketPriorityOptions", UIParent)
 panel:SetWidth(420)
-panel:SetHeight(540)
+panel:SetHeight(620)
 panel:SetPoint("CENTER")
 panel:SetMovable(true)
 panel:EnableMouse(true)
@@ -111,22 +111,22 @@ for i = 1, TP.USE_MAX do
 end
 
 local passiveTitle = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-passiveTitle:SetPoint("TOPLEFT", 25, -330)
+passiveTitle:SetPoint("TOPLEFT", 25, -410)
 passiveTitle:SetText("Fallback pasivo")
 
 local passiveIcon = panel:CreateTexture(nil, "ARTWORK")
-passiveIcon:SetPoint("TOPLEFT", 25, -351)
+passiveIcon:SetPoint("TOPLEFT", 25, -431)
 passiveIcon:SetWidth(22)
 passiveIcon:SetHeight(22)
 passiveIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
 local passiveText = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-passiveText:SetPoint("TOPLEFT", 51, -353)
+passiveText:SetPoint("TOPLEFT", 51, -433)
 passiveText:SetWidth(224)
 passiveText:SetJustifyH("LEFT")
 
 local passive13 = CreateButton(panel, "13", 55, 22)
-passive13:SetPoint("TOPRIGHT", -78, -346)
+passive13:SetPoint("TOPRIGHT", -78, -426)
 passive13:SetScript("OnClick", function() TP.Config.SetPassiveFromSlot(13) end)
 
 local passive14 = CreateButton(panel, "14", 55, 22)
@@ -134,7 +134,7 @@ passive14:SetPoint("LEFT", passive13, "RIGHT", 4, 0)
 passive14:SetScript("OnClick", function() TP.Config.SetPassiveFromSlot(14) end)
 
 local removePassive = CreateButton(panel, "Eliminar pasivo", 115, 22)
-removePassive:SetPoint("TOPLEFT", 25, -384)
+removePassive:SetPoint("TOPLEFT", 25, -464)
 removePassive:SetScript("OnClick", function() TP.Config.RemovePassive() end)
 
 local clear = CreateButton(panel, "Limpiar todo", 115, 22)
@@ -142,14 +142,14 @@ clear:SetPoint("LEFT", removePassive, "RIGHT", 8, 0)
 clear:SetScript("OnClick", function() TP.Config.Clear() end)
 
 local overlaySizeTitle = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-overlaySizeTitle:SetPoint("TOPLEFT", 25, -418)
+overlaySizeTitle:SetPoint("TOPLEFT", 25, -498)
 overlaySizeTitle:SetText("Tamaño del overlay")
 
 local overlaySizeText = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 overlaySizeText:SetPoint("LEFT", overlaySizeTitle, "RIGHT", 12, 0)
 
 local overlaySizeMinus = CreateButton(panel, "-", 28, 22)
-overlaySizeMinus:SetPoint("TOPRIGHT", -62, -412)
+overlaySizeMinus:SetPoint("TOPRIGHT", -62, -492)
 
 local overlaySizePlus = CreateButton(panel, "+", 28, 22)
 overlaySizePlus:SetPoint("LEFT", overlaySizeMinus, "RIGHT", 4, 0)
@@ -171,7 +171,7 @@ overlaySizeMinus:SetScript("OnClick", function() ChangeOverlaySize(-4) end)
 overlaySizePlus:SetScript("OnClick", function() ChangeOverlaySize(4) end)
 
 local overlayMoveButton = CreateButton(panel, "Mover overlay", 115, 22)
-overlayMoveButton:SetPoint("TOPLEFT", 25, -448)
+overlayMoveButton:SetPoint("TOPLEFT", 25, -528)
 
 local overlayMoveStatus = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 overlayMoveStatus:SetPoint("LEFT", overlayMoveButton, "RIGHT", 12, 0)

@@ -1,5 +1,5 @@
 -- Configuration argument validation regression tests.
-TrinketPriority = { USE_MAX = 7, GetActiveProfile = function() return profile end, GetActiveProfileName = function() return "Test" end, Print = function() end }
+TrinketPriority = { USE_MAX = 10, GetActiveProfile = function() return profile end, GetActiveProfileName = function() return "Test" end, Print = function() end }
 profile = { use = { { id = 1 }, { id = 2 } }, passive = nil }
 TrinketPriority.UI = { Refresh = function() end }
 TrinketPriority.Overlay = { Refresh = function() end }

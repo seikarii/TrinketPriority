@@ -3,7 +3,7 @@ TrinketPriority = TrinketPriority or {}
 local TP = TrinketPriority
 
 TP.ADDON_NAME = "TrinketPriority"
-TP.USE_MAX = 7
+TP.USE_MAX = 10
 TP.COMBAT_DELAY = 0.1
 TP.DB_SCHEMA = 2
 TP.PROFILE_NAMES = { "Perfil 1", "Perfil 2", "Perfil 3" }
@@ -131,6 +131,7 @@ function TP.InitDatabase()
     end
     profile.name = profileName
     if type(profile.use) ~= "table" then profile.use = {} end
+    while #profile.use > TP.USE_MAX do table.remove(profile.use) end
     if type(profile.overlay) ~= "table" then profile.overlay = { iconSize = 48, movable = false } end
   end
 

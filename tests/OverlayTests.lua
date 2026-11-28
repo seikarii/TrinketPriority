@@ -53,7 +53,7 @@ _G.C_Item = {
   RequestLoadItemDataByID = function(id) loadRequests[id] = (loadRequests[id] or 0) + 1 end,
 }
 TrinketPriority = {
-  USE_MAX = 7,
+  USE_MAX = 10,
   GetActiveProfile = function() return profile end,
   RemainingCooldown = function(start, duration) return duration - start end,
   Inventory = { GetSnapshot = function() error("Render queried inventory") end, FindBagItem = function() error("Render searched bags") end },
